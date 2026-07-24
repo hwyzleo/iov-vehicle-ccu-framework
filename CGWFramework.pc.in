@@ -3,8 +3,8 @@ exec_prefix=${prefix}
 libdir=${exec_prefix}/lib
 includedir=${prefix}/include
 
-Name: hwyz
-Description: HWYZ Framework Library
+Name: cgw-framework
+Description: CGW Framework Library
 Version: @PROJECT_VERSION@
-Libs: -L${libdir} -lhwyz
+Libs: -L${libdir} -lcgw-framework
 Cflags: -I${includedir}

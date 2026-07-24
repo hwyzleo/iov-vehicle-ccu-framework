@@ -10,11 +10,11 @@ file(GLOB_RECURSE FRAMEWORK_SOURCES src/*.cpp)
 file(GLOB_RECURSE FRAMEWORK_HEADERS include/*.h)
 
 # 创建框架库
-add_library(hwyz SHARED
+add_library(cgw-framework SHARED
         ${FRAMEWORK_SOURCES}
         ${FRAMEWORK_HEADERS}
         )
-set_target_properties(hwyz PROPERTIES
+set_target_properties(cgw-framework PROPERTIES
         LINKER_LANGUAGE CXX
         )
 
@@ -43,11 +43,11 @@ if(EXISTS ${LIB_DIR}/yaml-cpp)
     )
     # 使用LINK_FLAGS直接传递链接选项，避免CMake重排
     if(APPLE)
-        set_target_properties(hwyz PROPERTIES
+        set_target_properties(cgw-framework PROPERTIES
             LINK_FLAGS "-force_load ${LIB_DIR}/yaml-cpp/libyaml-cpp.a"
         )
     else()
-        set_target_properties(hwyz PROPERTIES
+        set_target_properties(cgw-framework PROPERTIES
             LINK_FLAGS "-Wl,--whole-archive ${LIB_DIR}/yaml-cpp/libyaml-cpp.a -Wl,--no-whole-archive"
         )
     endif()
@@ -55,10 +55,10 @@ if(EXISTS ${LIB_DIR}/yaml-cpp)
     # 拷贝 yaml-cpp dylib 到 build 目录
     file(GLOB YAML_CPP_DYLIBS "${LIB_DIR}/yaml-cpp/*.dylib" "${LIB_DIR}/yaml-cpp/*.so")
     foreach(YAML_CPP_DYLIB ${YAML_CPP_DYLIBS})
-        add_custom_command(TARGET hwyz POST_BUILD
+        add_custom_command(TARGET cgw-framework POST_BUILD
                 COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 ${YAML_CPP_DYLIB}
-                $<TARGET_FILE_DIR:hwyz>
+                $<TARGET_FILE_DIR:cgw-framework>
                 COMMENT "Copying ${YAML_CPP_DYLIB} to build directory"
                 )
     endforeach()
@@ -68,7 +68,7 @@ endif()
 # OpenSSL not required for CGW framework-log
 
 # 设置包含目录
-target_include_directories(hwyz
+target_include_directories(cgw-framework
         PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/third_party/include>
@@ -78,30 +78,30 @@ target_include_directories(hwyz
         )
 
 # 配置文件
-configure_file(HWYZConfig.cmake.in
-        "${CMAKE_CURRENT_BINARY_DIR}/HWYZConfig.cmake"
+configure_file(CGWFrameworkConfig.cmake.in
+        "${CMAKE_CURRENT_BINARY_DIR}/CGWFrameworkConfig.cmake"
         @ONLY)
 
 # 安装配置文件
 install(FILES
-        "${CMAKE_CURRENT_BINARY_DIR}/HWYZConfig.cmake"
-        DESTINATION lib/cmake/HWYZ
+        "${CMAKE_CURRENT_BINARY_DIR}/CGWFrameworkConfig.cmake"
+        DESTINATION lib/cmake/CGWFramework
         )
 
 # 配置 pkg-config 文件
-configure_file(HWYZ.pc.in
-        "${CMAKE_CURRENT_BINARY_DIR}/HWYZ.pc"
+configure_file(CGWFramework.pc.in
+        "${CMAKE_CURRENT_BINARY_DIR}/CGWFramework.pc"
         @ONLY)
 
 # 安装 pkg-config 文件
 install(FILES
-        "${CMAKE_CURRENT_BINARY_DIR}/HWYZ.pc"
+        "${CMAKE_CURRENT_BINARY_DIR}/CGWFramework.pc"
         DESTINATION lib/pkgconfig
         )
 
 # 安装规则
-install(TARGETS hwyz
-        EXPORT HWYZ-targets
+install(TARGETS cgw-framework
+        EXPORT CGWFramework-targets
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
         RUNTIME DESTINATION bin
@@ -114,10 +114,10 @@ install(DIRECTORY include/
         )
 
 # 导出配置
-install(EXPORT HWYZ-targets
-        FILE HWYZTargets.cmake
-        NAMESPACE HWYZ::
-        DESTINATION lib/cmake/HWYZ
+install(EXPORT CGWFramework-targets
+        FILE CGWFrameworkTargets.cmake
+        NAMESPACE CGWFramework::
+        DESTINATION lib/cmake/CGWFramework
         )
 
 # 单元测试
@@ -138,7 +138,7 @@ set(TEST_SOURCES
 foreach(TEST_SOURCE ${TEST_SOURCES})
     get_filename_component(TEST_NAME ${TEST_SOURCE} NAME_WE)
     add_executable(${TEST_NAME} ${TEST_SOURCE})
-    target_link_libraries(${TEST_NAME} PRIVATE hwyz yaml-cpp pthread)
+    target_link_libraries(${TEST_NAME} PRIVATE cgw-framework yaml-cpp pthread)
     target_include_directories(${TEST_NAME} PRIVATE
             ${CMAKE_CURRENT_SOURCE_DIR}/include
             ${CMAKE_CURRENT_SOURCE_DIR}/third_party/include
