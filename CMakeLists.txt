@@ -127,6 +127,7 @@ set(TEST_SOURCES
         tests/test_log_types.cpp
         tests/test_log_config_adapter.cpp
         tests/test_log_enricher.cpp
+        tests/test_log_redactor.cpp
         )
 
 foreach(TEST_SOURCE ${TEST_SOURCES})
