@@ -131,6 +131,8 @@ set(TEST_SOURCES
         tests/test_log_level_filter.cpp
         tests/test_log_async_dispatcher.cpp
         tests/test_log_json_formatter.cpp
+        tests/test_log_context_scope.cpp
+        tests/test_log_integration.cpp
         )
 
 foreach(TEST_SOURCE ${TEST_SOURCES})
