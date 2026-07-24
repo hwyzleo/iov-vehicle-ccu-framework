@@ -1,0 +1,10 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: hwyz
+Description: HWYZ Framework Library
+Version: @PROJECT_VERSION@
+Libs: -L${libdir} -lhwyz
+Cflags: -I${includedir}
