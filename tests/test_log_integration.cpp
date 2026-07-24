@@ -55,7 +55,7 @@ void test_logger_context_propagation() {
     ctx.request_id = "req-integration";
 
     {
-        ContextScope scope(ctx);
+        ContextScope scope(std::move(ctx));
         logger.info("diag.uds.request", "UDS request started", {
             {"did", FieldValue::makeString("0x10")}
         });

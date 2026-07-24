@@ -4,13 +4,14 @@
 #include <cstdint>
 #include <vector>
 #include <unordered_map>
+#include <memory>
 
 namespace cgw {
 namespace fw {
 namespace log {
 
 // ============================================================
-// 错误码定义 (FW-0201~0205)
+// 错误码定义 (CGW-FW-0201~0205)
 // ============================================================
 enum class LogError : uint32_t {
     kOk = 0,
@@ -113,12 +114,38 @@ struct Field {
 };
 
 // ============================================================
+// SOME/IP 上下文（CGW 特有）
+// ============================================================
+struct SomeIpContext {
+    std::string service_id;
+    std::string instance_id;
+    std::string method_id;
+    std::string client_id;
+    std::string remote_endpoint;
+};
+
+// ============================================================
+// 诊断上下文（CGW 特有）
+// ============================================================
+struct DiagnosticContext {
+    std::string ecu_id;
+    std::string logical_address;
+    std::string transport;
+    std::string uds_sid;
+    std::string did;
+    std::string nrc;
+    uint32_t attempt = 0;
+};
+
+// ============================================================
 // 日志上下文（用于 ContextScope 传播）
 // ============================================================
 struct LogContext {
     std::string trace_id;
     std::string request_id;
     std::string session_id;
+    std::unique_ptr<SomeIpContext> someip;
+    std::unique_ptr<DiagnosticContext> diagnostic;
 };
 
 // ============================================================

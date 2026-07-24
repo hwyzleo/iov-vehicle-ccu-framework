@@ -13,7 +13,7 @@ void test_context_scope_basic() {
         LogContext ctx;
         ctx.trace_id = "trace-1";
         ctx.request_id = "req-1";
-        ContextScope scope(ctx);
+        ContextScope scope(std::move(ctx));
 
         const LogContext* current = ContextScope::current();
         assert(current != nullptr);
@@ -30,7 +30,7 @@ void test_context_scope_nested() {
     {
         LogContext outer;
         outer.trace_id = "outer-trace";
-        ContextScope outerScope(outer);
+        ContextScope outerScope(std::move(outer));
 
         assert(ContextScope::current()->trace_id == "outer-trace");
 
@@ -38,7 +38,7 @@ void test_context_scope_nested() {
             LogContext inner;
             inner.trace_id = "inner-trace";
             inner.request_id = "inner-req";
-            ContextScope innerScope(inner);
+            ContextScope innerScope(std::move(inner));
 
             assert(ContextScope::current()->trace_id == "inner-trace");
             assert(ContextScope::current()->request_id == "inner-req");
@@ -55,14 +55,14 @@ void test_context_scope_nested() {
 void test_context_scope_thread_isolation() {
     LogContext mainCtx;
     mainCtx.trace_id = "main-trace";
-    ContextScope mainScope(mainCtx);
+    ContextScope mainScope(std::move(mainCtx));
 
     std::thread child([]() {
         assert(ContextScope::current() == nullptr);
 
         LogContext childCtx;
         childCtx.trace_id = "child-trace";
-        ContextScope childScope(childCtx);
+        ContextScope childScope(std::move(childCtx));
 
         assert(ContextScope::current()->trace_id == "child-trace");
     });
