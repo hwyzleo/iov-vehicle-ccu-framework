@@ -10,7 +10,7 @@ using namespace cgw::fw::log;
 
 void test_async_basic_submit() {
     std::vector<std::string> written;
-    auto writer = [&written](const std::string& line, bool isError) -> bool {
+    auto writer = [&written](const std::string& line, LogLevel level) -> bool {
         written.push_back(line);
         return true;
     };
@@ -30,7 +30,7 @@ void test_async_basic_submit() {
 
 void test_async_queue_overflow_low_level() {
     std::atomic<int> writeCount{0};
-    auto writer = [&writeCount](const std::string&, bool) -> bool {
+    auto writer = [&writeCount](const std::string&, LogLevel) -> bool {
         ++writeCount;
         return true;
     };
@@ -50,7 +50,7 @@ void test_async_queue_overflow_low_level() {
 
 void test_async_queue_overflow_high_level_sync() {
     std::vector<std::string> written;
-    auto writer = [&written](const std::string& line, bool isError) -> bool {
+    auto writer = [&written](const std::string& line, LogLevel level) -> bool {
         written.push_back(line);
         return true;
     };
@@ -79,7 +79,7 @@ void test_async_queue_overflow_high_level_sync() {
 }
 
 void test_async_dropped_count() {
-    auto writer = [](const std::string&, bool) -> bool { return true; };
+    auto writer = [](const std::string&, LogLevel) -> bool { return true; };
     AsyncDispatcher dispatcher(1, 50, writer);
     dispatcher.start();
 

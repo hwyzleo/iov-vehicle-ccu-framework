@@ -16,7 +16,7 @@ public:
     SinkManager(const LogConfig& config, const std::string& serviceName);
     ~SinkManager();
 
-    bool write(const std::string& line, bool isError = false);
+    bool write(const std::string& line, LogLevel level = LogLevel::kInfo);
     void flush();
     bool hasAvailableSink() const;
 

@@ -66,7 +66,7 @@ std::pair<LogConfig, LogErrorInfo> LogConfigAdapter::loadFromYamlString(
             if (logNode["file"]) {
                 YAML::Node fileNode = logNode["file"];
                 if (fileNode["enabled"]) config.file_config.enabled = fileNode["enabled"].as<bool>(false);
-                if (fileNode["root"]) config.file_config.root = fileNode["root"].as<std::string>("/var/log/tbox");
+                if (fileNode["root"]) config.file_config.root = fileNode["root"].as<std::string>("/var/log/cgw");
                 if (fileNode["max_file_size_mb"]) config.file_config.max_file_size_mb = fileNode["max_file_size_mb"].as<uint32_t>(20);
                 if (fileNode["max_files"]) config.file_config.max_files = fileNode["max_files"].as<uint32_t>(5);
                 if (fileNode["total_budget_mb"]) config.file_config.total_budget_mb = fileNode["total_budget_mb"].as<uint32_t>(100);
@@ -77,6 +77,10 @@ std::pair<LogConfig, LogErrorInfo> LogConfigAdapter::loadFromYamlString(
                 if (redactNode["identifiers"]) config.redact_config.identifiers = redactNode["identifiers"].as<std::string>("mask");
                 if (redactNode["raw_payload_max_bytes"]) config.redact_config.raw_payload_max_bytes = redactNode["raw_payload_max_bytes"].as<uint32_t>(256);
             }
+
+            if (logNode["format"]) {
+                config.format = logNode["format"].as<std::string>("standard");
+            }
         }
 
         // 服务级覆盖
@@ -84,6 +88,9 @@ std::pair<LogConfig, LogErrorInfo> LogConfigAdapter::loadFromYamlString(
             YAML::Node svcLog = service["log"];
             if (svcLog["level"]) {
                 config.level = parseLevel(svcLog["level"].as<std::string>("INFO"));
+            }
+            if (svcLog["format"]) {
+                config.format = svcLog["format"].as<std::string>("standard");
             }
             if (svcLog["modules"]) {
                 YAML::Node modules = svcLog["modules"];
@@ -109,6 +116,10 @@ std::pair<LogConfig, LogErrorInfo> LogConfigAdapter::loadFromYamlString(
 LogErrorInfo LogConfigAdapter::validate(const LogConfig& config) {
     if (config.schema_version != 1) {
         return {LogError::kConfigInvalid, "schema_version must be 1, got " + std::to_string(config.schema_version), ""};
+    }
+
+    if (config.format != "standard" && config.format != "json") {
+        return {LogError::kConfigInvalid, "format must be 'standard' or 'json', got '" + config.format + "'", ""};
     }
 
     if (config.async_config.queue_size == 0) {

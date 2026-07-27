@@ -72,7 +72,7 @@ target_include_directories(cgw-framework
         PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/third_party/include>
-        $<INSTALL_INTERFACE:include>
+        $<INSTALL_INTERFACE:include/cgw-framework>
         PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src
         )
@@ -105,11 +105,11 @@ install(TARGETS cgw-framework
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
         RUNTIME DESTINATION bin
-        INCLUDES DESTINATION include
+        INCLUDES DESTINATION include/cgw-framework
         )
 
 install(DIRECTORY include/
-        DESTINATION include
+        DESTINATION include/cgw-framework
         FILES_MATCHING PATTERN "*.h"
         )
 
@@ -131,6 +131,7 @@ set(TEST_SOURCES
         tests/test_log_level_filter.cpp
         tests/test_log_async_dispatcher.cpp
         tests/test_log_json_formatter.cpp
+        tests/test_log_standard_formatter.cpp
         tests/test_log_context_scope.cpp
         tests/test_log_integration.cpp
         )

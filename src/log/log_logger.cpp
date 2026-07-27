@@ -3,6 +3,7 @@
 #include "log_redactor.h"
 #include "log_level_filter.h"
 #include "log_json_formatter.h"
+#include "log_standard_formatter.h"
 #include "log_async_dispatcher.h"
 #include "log_sink_manager.h"
 #include "log_emergency_writer.h"
@@ -57,10 +58,11 @@ public:
         m_redactor.reset(new Redactor(config.redact_config));
         m_levelFilter.reset(new LevelFilter(config));
         m_sinkManager.reset(new SinkManager(config, service));
+        m_useStandardFormat = (config.format == "standard");
 
         if (config.async_config.enabled) {
-            auto writer = [this](const std::string& line, bool isError) -> bool {
-                return m_sinkManager->write(line, isError);
+            auto writer = [this](const std::string& line, LogLevel level) -> bool {
+                return m_sinkManager->write(line, level);
             };
             m_dispatcher.reset(new AsyncDispatcher(
                 config.async_config.queue_size,
@@ -75,10 +77,16 @@ public:
     }
 
     Logger getLogger(const std::string& module) {
+        if (!m_initialized) {
+            // 日志系统未初始化，返回 no-op Logger（m_impl 为空）
+            // Logger 的所有输出方法已有 if (m_impl) 保护，不会崩溃
+            return Logger();
+        }
         Logger logger;
         logger.m_impl = std::make_shared<Logger::Impl>(
             module, m_enricher.get(), m_redactor.get(),
-            m_levelFilter.get(), m_dispatcher.get(), m_sinkManager.get()
+            m_levelFilter.get(), m_dispatcher.get(), m_sinkManager.get(),
+            m_useStandardFormat
         );
         return logger;
     }
@@ -96,6 +104,16 @@ public:
 private:
     LoggerRegistry() = default;
 
+    // 显式析构：在成员按声明逆序销毁之前，先停止异步派发线程并 join。
+    // 否则（静态销毁阶段）m_sinkManager 会先于 m_dispatcher 被销毁，
+    // 而仍在运行的 worker 线程会通过 writer 回调访问已释放的 SinkManager，
+    // 造成对已销毁 sink 的悬垂访问（EXC_BAD_ACCESS）。
+    ~LoggerRegistry() {
+        if (m_dispatcher) {
+            m_dispatcher->stop();
+        }
+    }
+
     std::mutex m_mutex;
     bool m_initialized = false;
     std::string m_service;
@@ -104,6 +122,7 @@ private:
     std::unique_ptr<LevelFilter> m_levelFilter;
     std::unique_ptr<AsyncDispatcher> m_dispatcher;
     std::unique_ptr<SinkManager> m_sinkManager;
+    bool m_useStandardFormat = true;
 };
 
 // ============================================================
@@ -116,13 +135,15 @@ public:
          Redactor* redactor,
          LevelFilter* levelFilter,
          AsyncDispatcher* dispatcher,
-         SinkManager* sinkManager)
+         SinkManager* sinkManager,
+         bool useStandardFormat)
         : m_module(module)
         , m_enricher(enricher)
         , m_redactor(redactor)
         , m_levelFilter(levelFilter)
         , m_dispatcher(dispatcher)
         , m_sinkManager(sinkManager)
+        , m_useStandardFormat(useStandardFormat)
     {}
 
     void log(LogLevel level, std::string_view event, std::string_view message,
@@ -140,12 +161,18 @@ public:
         );
 
         std::vector<Field> redacted = m_redactor->redact(std::move(enriched));
-        std::string jsonLine = JsonLineFormatter::format(redacted);
+
+        std::string line;
+        if (m_useStandardFormat) {
+            line = StandardFormatter::format(redacted);
+        } else {
+            line = JsonLineFormatter::format(redacted);
+        }
 
         if (m_dispatcher) {
-            m_dispatcher->submit(jsonLine, level);
+            m_dispatcher->submit(line, level);
         } else {
-            m_sinkManager->write(jsonLine, level >= LogLevel::kError);
+            m_sinkManager->write(line, level);
         }
     }
 
@@ -163,6 +190,7 @@ private:
     LevelFilter* m_levelFilter;
     AsyncDispatcher* m_dispatcher;
     SinkManager* m_sinkManager;
+    bool m_useStandardFormat = true;
 };
 
 // ============================================================

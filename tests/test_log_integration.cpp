@@ -101,6 +101,40 @@ void test_logger_fatal_aborts() {
     }
 }
 
+void test_standard_format_end_to_end() {
+    LogConfig config;
+    config.format = "standard";
+    config.level = LogLevel::kInfo;
+    config.async_config.enabled = false;
+    config.console_config.enabled = false;
+    config.file_config.enabled = false;
+
+    auto result = Logger::init("test_service_standard", config);
+    assert(result.error == LogError::kOk);
+
+    Logger logger = Logger::get("main");
+    logger.info("test_event", "测试消息", {{"key", FieldValue::makeString("value")}});
+    logger.flush();
+    std::cout << "  [PASS] test_standard_format_end_to_end" << std::endl;
+}
+
+void test_json_format_end_to_end() {
+    LogConfig config;
+    config.format = "json";
+    config.level = LogLevel::kInfo;
+    config.async_config.enabled = false;
+    config.console_config.enabled = false;
+    config.file_config.enabled = false;
+
+    auto result = Logger::init("test_service_json", config);
+    assert(result.error == LogError::kOk);
+
+    Logger logger = Logger::get("main");
+    logger.info("test_event", "测试消息", {{"key", FieldValue::makeString("value")}});
+    logger.flush();
+    std::cout << "  [PASS] test_json_format_end_to_end" << std::endl;
+}
+
 int main() {
     std::cout << "Running integration tests..." << std::endl;
     test_logger_init_and_log();
@@ -108,6 +142,8 @@ int main() {
     test_logger_context_propagation();
     test_logger_redaction();
     test_logger_fatal_aborts();
+    test_standard_format_end_to_end();
+    test_json_format_end_to_end();
     std::cout << "All integration tests passed!" << std::endl;
     return 0;
 }

@@ -105,6 +105,61 @@ void test_default_degradation_on_error() {
     std::cout << "  [PASS] test_default_degradation_on_error" << std::endl;
 }
 
+void test_default_format_is_standard() {
+    std::string yaml = R"(
+common:
+  log:
+    level: INFO
+)";
+    auto result = LogConfigAdapter::loadFromYamlString(yaml);
+    assert(result.second.code == LogError::kOk);
+    assert(result.first.format == "standard");
+    std::cout << "  [PASS] test_default_format_is_standard" << std::endl;
+}
+
+void test_json_format_config() {
+    std::string yaml = R"(
+common:
+  log:
+    level: INFO
+    format: json
+)";
+    auto result = LogConfigAdapter::loadFromYamlString(yaml);
+    assert(result.second.code == LogError::kOk);
+    assert(result.first.format == "json");
+    std::cout << "  [PASS] test_json_format_config" << std::endl;
+}
+
+void test_invalid_format_config() {
+    std::string yaml = R"(
+common:
+  log:
+    level: INFO
+    format: xml
+)";
+    auto result = LogConfigAdapter::loadFromYamlString(yaml);
+    assert(result.second.code == LogError::kConfigInvalid);
+    assert(result.second.message.find("format") != std::string::npos);
+    std::cout << "  [PASS] test_invalid_format_config" << std::endl;
+}
+
+void test_service_level_format_override() {
+    std::string common = R"(
+common:
+  log:
+    level: INFO
+    format: standard
+)";
+    std::string service = R"(
+log:
+  format: json
+)";
+    auto result = LogConfigAdapter::loadFromYamlString(common, service);
+    assert(result.second.code == LogError::kOk);
+    assert(result.first.format == "json");
+    std::cout << "  [PASS] test_service_level_format_override" << std::endl;
+}
+
 int main() {
     std::cout << "Running LogConfigAdapter tests..." << std::endl;
     test_default_config();
@@ -113,6 +168,10 @@ int main() {
     test_file_budget_violation();
     test_service_override();
     test_default_degradation_on_error();
+    test_default_format_is_standard();
+    test_json_format_config();
+    test_invalid_format_config();
+    test_service_level_format_override();
     std::cout << "All LogConfigAdapter tests passed!" << std::endl;
     return 0;
 }

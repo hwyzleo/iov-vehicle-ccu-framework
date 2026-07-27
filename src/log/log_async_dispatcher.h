@@ -9,6 +9,7 @@
 #include <atomic>
 #include <functional>
 #include <cstdint>
+#include <utility>
 
 namespace cgw {
 namespace fw {
@@ -16,7 +17,7 @@ namespace log {
 
 class AsyncDispatcher {
 public:
-    using Writer = std::function<bool(const std::string& line, bool isError)>;
+    using Writer = std::function<bool(const std::string& line, LogLevel level)>;
 
     AsyncDispatcher(uint32_t queueSize, uint32_t flushIntervalMs, Writer writer);
     ~AsyncDispatcher();
@@ -32,7 +33,8 @@ private:
     uint32_t m_flushIntervalMs;
     Writer m_writer;
 
-    std::queue<std::string> m_queue;
+    // 每个条目包含格式化后的日志行和对应的级别
+    std::queue<std::pair<std::string, LogLevel>> m_queue;
     mutable std::mutex m_mutex;
     std::condition_variable m_cond;
     std::condition_variable m_flushCond;

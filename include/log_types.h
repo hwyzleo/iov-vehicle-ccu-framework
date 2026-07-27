@@ -182,6 +182,7 @@ struct LogConfig {
     ConsoleConfig console_config;
     FileConfig file_config;
     RedactConfig redact_config;
+    std::string format = "standard";       // "standard" 或 "json"
     // 模块级别覆盖: <module> -> LogLevel
     std::unordered_map<std::string, LogLevel> module_levels;
 };

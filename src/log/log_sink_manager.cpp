@@ -18,12 +18,12 @@ SinkManager::~SinkManager() {
     flush();
 }
 
-bool SinkManager::write(const std::string& line, bool isError) {
+bool SinkManager::write(const std::string& line, LogLevel level) {
     std::lock_guard<std::mutex> lock(m_mutex);
     bool anySuccess = false;
 
     if (m_consoleSink && m_consoleSink->isAvailable()) {
-        if (m_consoleSink->write(line, isError)) {
+        if (m_consoleSink->write(line, level)) {
             anySuccess = true;
         }
     }
