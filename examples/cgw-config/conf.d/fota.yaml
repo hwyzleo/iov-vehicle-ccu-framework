@@ -1,0 +1,8 @@
+# /etc/cgw/conf.d/fota.yaml - CGW-FOTA service configuration
+fota:
+  log:
+    level: INFO
+    modules:
+      collector: INFO
+      snapshot: INFO
+      submit: WARN

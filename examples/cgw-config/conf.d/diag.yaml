@@ -1,0 +1,8 @@
+# /etc/cgw/conf.d/diag.yaml - CGW-DIAG service configuration
+diag:
+  log:
+    level: INFO
+    modules:
+      router: WARN
+      tester: INFO
+      transport: WARN

@@ -1,0 +1,22 @@
+# /etc/cgw/common.yaml - CGW common baseline (cross-service)
+# Installed by cgw-framework-config deployment.
+common:
+  log:
+    schema_version: 1
+    level: INFO
+    strict: false
+    async:
+      enabled: true
+      queue_size: 4096
+      flush_interval_ms: 1000
+    console:
+      enabled: true
+    file:
+      enabled: false
+      root: /var/log/cgw
+      max_file_size_mb: 20
+      max_files: 5
+      total_budget_mb: 100
+    redact:
+      identifiers: mask
+      payload_max_bytes: 256

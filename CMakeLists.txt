@@ -2,11 +2,11 @@ project(CGW-Framework)
 cmake_minimum_required(VERSION 3.10)
 
 # 设置C++标准
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # 收集源文件
-file(GLOB_RECURSE FRAMEWORK_SOURCES src/*.cpp)
+file(GLOB FRAMEWORK_SOURCES src/log/*.cpp)
 file(GLOB_RECURSE FRAMEWORK_HEADERS include/*.h)
 
 # 创建框架库
@@ -36,8 +36,8 @@ endif ()
 # 添加三方库
 if(EXISTS ${LIB_DIR}/yaml-cpp)
     # 使用IMPORTED静态库提供include路径
-    add_library(yaml-cpp STATIC IMPORTED)
-    set_target_properties(yaml-cpp PROPERTIES
+    add_library(yaml-cpp::yaml-cpp STATIC IMPORTED)
+    set_target_properties(yaml-cpp::yaml-cpp PROPERTIES
         IMPORTED_LOCATION "${LIB_DIR}/yaml-cpp/libyaml-cpp.a"
         INTERFACE_INCLUDE_DIRECTORIES "${PROJECT_SOURCE_DIR}/third_party/include"
     )
@@ -77,6 +77,24 @@ target_include_directories(cgw-framework
         ${CMAKE_CURRENT_SOURCE_DIR}/src
         )
 
+# ============================================================
+# cgw-framework-config: independent static library (CGW-FW-DSN-CR-002)
+# ============================================================
+file(GLOB CONFIG_SOURCES src/config/*.cpp)
+add_library(cgw-framework-config STATIC ${CONFIG_SOURCES})
+set_target_properties(cgw-framework-config PROPERTIES LINKER_LANGUAGE CXX)
+target_include_directories(cgw-framework-config
+        PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<INSTALL_INTERFACE:include/cgw-framework>
+        PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+        ${CMAKE_CURRENT_SOURCE_DIR}/third_party/include
+        )
+if(TARGET yaml-cpp::yaml-cpp)
+    target_link_libraries(cgw-framework-config PRIVATE yaml-cpp::yaml-cpp)
+endif()
+
 # 配置文件
 configure_file(CGWFrameworkConfig.cmake.in
         "${CMAKE_CURRENT_BINARY_DIR}/CGWFrameworkConfig.cmake"
@@ -108,6 +126,14 @@ install(TARGETS cgw-framework
         INCLUDES DESTINATION include/cgw-framework
         )
 
+install(TARGETS cgw-framework-config
+        EXPORT CGWFramework-targets
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib
+        RUNTIME DESTINATION bin
+        INCLUDES DESTINATION include/cgw-framework
+        )
+
 install(DIRECTORY include/
         DESTINATION include/cgw-framework
         FILES_MATCHING PATTERN "*.h"
@@ -123,7 +149,8 @@ install(EXPORT CGWFramework-targets
 # 单元测试
 enable_testing()
 
-set(TEST_SOURCES
+# 日志组件测试 (cgw-framework)
+set(LOG_TEST_SOURCES
         tests/test_log_types.cpp
         tests/test_log_config_adapter.cpp
         tests/test_log_enricher.cpp
@@ -136,10 +163,23 @@ set(TEST_SOURCES
         tests/test_log_integration.cpp
         )
 
-foreach(TEST_SOURCE ${TEST_SOURCES})
+# 配置组件测试 (cgw-framework-config)
+set(CONFIG_TEST_SOURCES
+        tests/test_config_path_resolver.cpp
+        tests/test_config_yaml_parser.cpp
+        tests/test_config_merger.cpp
+        tests/test_config_snapshot.cpp
+        tests/test_config_validator.cpp
+        )
+
+foreach(TEST_SOURCE ${LOG_TEST_SOURCES} ${CONFIG_TEST_SOURCES})
     get_filename_component(TEST_NAME ${TEST_SOURCE} NAME_WE)
     add_executable(${TEST_NAME} ${TEST_SOURCE})
-    target_link_libraries(${TEST_NAME} PRIVATE cgw-framework yaml-cpp pthread)
+    if(${TEST_NAME} MATCHES "^test_config_")
+        target_link_libraries(${TEST_NAME} PRIVATE cgw-framework-config yaml-cpp::yaml-cpp pthread)
+    else()
+        target_link_libraries(${TEST_NAME} PRIVATE cgw-framework yaml-cpp::yaml-cpp pthread)
+    endif()
     target_include_directories(${TEST_NAME} PRIVATE
             ${CMAKE_CURRENT_SOURCE_DIR}/include
             ${CMAKE_CURRENT_SOURCE_DIR}/third_party/include
@@ -150,3 +190,16 @@ foreach(TEST_SOURCE ${TEST_SOURCES})
     endif()
     add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
 endforeach()
+
+# 配置与日志集成测试 (config -> LogConfig -> Logger::init)
+add_executable(test_config_integration tests/test_config_integration.cpp)
+target_link_libraries(test_config_integration PRIVATE cgw-framework cgw-framework-config yaml-cpp::yaml-cpp pthread)
+target_include_directories(test_config_integration PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/third_party/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+        )
+if(EXISTS ${LIB_DIR}/yaml-cpp)
+    target_link_directories(test_config_integration PRIVATE $<BUILD_INTERFACE:${LIB_DIR}/yaml-cpp>)
+endif()
+add_test(NAME test_config_integration COMMAND test_config_integration)

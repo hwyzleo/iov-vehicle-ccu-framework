@@ -1,14 +1,27 @@
-include(CMakeFindDependencyMacro)
+# CGWFrameworkConfig.cmake.in - 可重定位的 CMake package 配置
+#
+# 安装位置: <prefix>/lib/cmake/CGWFramework/CGWFrameworkConfig.cmake
+# 本文件不固化 CMAKE_INSTALL_PREFIX，通过相对路径推导前缀，使同一套产物
+# 可在不同前缀（本地 ~/.local、生产 /opt/cgw、BUILD staging）下被消费。
 
-# 版本检查
+include(CMakeFindDependencyMacro)
 include(CMakePackageConfigHelpers)
 
-# yaml-cpp 是 cgw-framework 的链接依赖（静态链接但符号需传递给调用方）
+# yaml-cpp 是 cgw-framework / cgw-framework-config 的链接依赖
+# （静态链接但符号需传递给调用方）。
 find_dependency(yaml-cpp)
 
-# 定义库相关的变量
-set(CGW_FRAMEWORK_LIBRARIES CGWFramework::cgw-framework yaml-cpp::yaml-cpp)
-set(CGW_FRAMEWORK_INCLUDE_DIRS "@CMAKE_INSTALL_PREFIX@/include/cgw-framework")
+# 推导安装前缀（配置文件位于 <prefix>/lib/cmake/CGWFramework/）。
+get_filename_component(_cgw_fw_prefix "${CMAKE_CURRENT_LIST_DIR}/../../.." ABSOLUTE)
+set(CGW_FRAMEWORK_INCLUDE_DIRS "${_cgw_fw_prefix}/include/cgw-framework")
+set(CGW_FRAMEWORK_INCLUDE_DIR  "${CGW_FRAMEWORK_INCLUDE_DIRS}")
+unset(_cgw_fw_prefix)
 
-# 包含目标文件
+# 对外变量（兼容早期消费方）。
+# 推荐使用导出的组件 target: CGWFramework::cgw-framework, ::cgw-framework-config。
+set(CGW_FRAMEWORK_LIBRARIES CGWFramework::cgw-framework CGWFramework::cgw-framework-config)
+
+# 包含导出的目标
 include("${CMAKE_CURRENT_LIST_DIR}/CGWFrameworkTargets.cmake")
+
+set(CGWFramework_FOUND TRUE)

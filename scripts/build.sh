@@ -5,11 +5,19 @@
 # 用法: ./scripts/build.sh [选项]
 #
 # 选项:
-#   --clean      清理构建目录后重新构建
-#   --no-test    跳过测试步骤
-#   --install    构建后安装到系统目录
-#   --release    Release 模式构建（默认 Debug）
-#   --help       显示帮助信息
+#   --clean          清理构建目录后重新构建
+#   --no-test        跳过测试步骤
+#   --install        构建后安装到 INSTALL_PREFIX
+#   --prefix <DIR>   安装前缀（默认取 scripts/cgw-env.sh 中的 CGW_PREFIX）
+#   --release        Release 模式构建（默认 Debug）
+#   --help           显示帮助信息
+#
+# 安装前缀的单一来源是 scripts/cgw-env.sh：
+#   本地开发：  ./scripts/build.sh --install                 # -> ${HOME}/.local
+#   生产/CI：   CGW_PREFIX=/opt/cgw ./scripts/build.sh --install
+#
+# 注意：CGWFrameworkConfig.cmake 需要在 configure 阶段就知道前缀，
+#       因此前缀通过 -DCMAKE_INSTALL_PREFIX 传入，不能只在 install 阶段指定。
 #
 
 set -e  # 遇到错误立即退出
@@ -25,29 +33,36 @@ NC='\033[0m' # No Color
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BUILD_DIR="${PROJECT_ROOT}/build"
 
+# 构建环境单一来源：提供 CGW_PREFIX / CGWFramework_DIR
+source "${PROJECT_ROOT}/scripts/cgw-env.sh"
+
 # 默认选项
 CLEAN_BUILD=false
 RUN_TESTS=true
 INSTALL_AFTER_BUILD=false
 BUILD_TYPE="Debug"
+# 安装前缀来自 cgw-env.sh（CGW_PREFIX），--prefix 可覆盖
+INSTALL_PREFIX="${CGW_PREFIX}"
 
 # 显示帮助信息
 show_help() {
     echo "用法: $0 [选项]"
     echo ""
     echo "选项:"
-    echo "  --clean      清理构建目录后重新构建"
-    echo "  --no-test    跳过测试步骤"
-    echo "  --install    构建后安装到系统目录"
-    echo "  --release    Release 模式构建（默认 Debug）"
-    echo "  --help       显示帮助信息"
+    echo "  --clean          清理构建目录后重新构建"
+    echo "  --no-test        跳过测试步骤"
+    echo "  --install        构建后安装到 --prefix 指定的目录"
+    echo "  --prefix <DIR>   安装前缀（默认 ${CGW_PREFIX}，来自 scripts/cgw-env.sh）"
+    echo "  --release        Release 模式构建（默认 Debug）"
+    echo "  --help           显示帮助信息"
     echo ""
     echo "示例:"
-    echo "  $0                    # 完整构建（Debug + 测试）"
-    echo "  $0 --no-test          # 仅构建，跳过测试"
-    echo "  $0 --clean            # 清理后重新构建"
-    echo "  $0 --release          # Release 模式构建"
-    echo "  $0 --clean --install  # 清理构建并安装到系统目录"
+    echo "  $0                              # 完整构建（Debug + 测试）"
+    echo "  $0 --no-test                    # 仅构建，跳过测试"
+    echo "  $0 --clean                      # 清理后重新构建"
+    echo "  $0 --release                    # Release 模式构建"
+    echo "  $0 --clean --install            # 清理构建并安装到 ${CGW_PREFIX}"
+    echo "  CGW_PREFIX=/opt/cgw $0 --install  # 生产前缀（单一旋钮，无需改文件）"
 }
 
 # 打印带颜色的消息
@@ -188,12 +203,16 @@ clean_build() {
 configure_project() {
     print_info "配置 CMake 项目..."
     print_info "  构建类型: ${BUILD_TYPE}"
+    print_info "  安装前缀: ${INSTALL_PREFIX}"
 
     mkdir -p "$BUILD_DIR"
     cd "$BUILD_DIR"
 
+    # CMAKE_INSTALL_PREFIX 必须在 configure 阶段给定：
+    # CGWFrameworkConfig.cmake 需要它来定位头文件
     cmake .. \
         -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
+        -DCMAKE_INSTALL_PREFIX="${INSTALL_PREFIX}" \
         -DBUILD_TESTS=$([ "$RUN_TESTS" = true ] && echo "ON" || echo "OFF")
 
     if [ $? -ne 0 ]; then
@@ -257,18 +276,17 @@ install_project() {
         return 0
     fi
 
-    print_info "安装项目到系统目录..."
+    print_info "安装项目到: ${INSTALL_PREFIX}"
 
     cd "$BUILD_DIR"
 
-    # 检测操作系统，决定是否需要 sudo
-    local os_type=$(detect_os)
-    if [ "$os_type" = "macos" ]; then
-        # macOS 使用 /usr/local，通常需要 sudo
-        sudo make install
+    # 仅在前缀不可写时才用 sudo（如 /usr/local）；
+    # 默认的 ${HOME}/.local 无需提权，避免产出 root 属主的文件
+    if mkdir -p "${INSTALL_PREFIX}" 2>/dev/null && [ -w "${INSTALL_PREFIX}" ]; then
+        cmake --install .
     else
-        # Linux 系统目录需要 sudo
-        sudo make install
+        print_warning "前缀 ${INSTALL_PREFIX} 不可写，使用 sudo 安装"
+        sudo cmake --install .
     fi
 
     if [ $? -ne 0 ]; then
@@ -277,6 +295,7 @@ install_project() {
     fi
 
     print_success "安装完成"
+    print_info "消费方请使用: -DCGWFramework_DIR=${INSTALL_PREFIX}/lib/cmake/CGWFramework"
     return 0
 }
 
@@ -298,9 +317,10 @@ show_summary() {
     echo ""
     if [ "$INSTALL_AFTER_BUILD" = true ]; then
         echo "安装位置:"
-        echo "  - 库文件:    /usr/local/lib/"
-        echo "  - 头文件:    /usr/local/include/"
-        echo "  - CMake配置: /usr/local/lib/cmake/CGWFramework/"
+        echo "  - 共享库:    ${INSTALL_PREFIX}/lib/libcgw-framework.dylib"
+        echo "  - 静态库:    ${INSTALL_PREFIX}/lib/libcgw-framework-config.a"
+        echo "  - 头文件:    ${INSTALL_PREFIX}/include/cgw-framework/"
+        echo "  - CMake配置: ${INSTALL_PREFIX}/lib/cmake/CGWFramework/"
     fi
     echo "=========================================="
 }
@@ -319,6 +339,18 @@ parse_args() {
                 ;;
             --install)
                 INSTALL_AFTER_BUILD=true
+                shift
+                ;;
+            --prefix)
+                if [ -z "$2" ]; then
+                    print_error "--prefix 需要一个目录参数"
+                    exit 1
+                fi
+                INSTALL_PREFIX="$2"
+                shift 2
+                ;;
+            --prefix=*)
+                INSTALL_PREFIX="${1#--prefix=}"
                 shift
                 ;;
             --release)
