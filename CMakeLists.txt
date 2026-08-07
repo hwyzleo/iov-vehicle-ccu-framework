@@ -113,6 +113,29 @@ target_include_directories(cgw-framework-store
         )
 target_link_libraries(cgw-framework-store PUBLIC Threads::Threads)
 
+# ============================================================
+# cgw-framework-hash: independent static library (CGW-FW-DSN-CR-004)
+# FIPS 180-4 SHA-256; no config/store/log/SOME-IP dependency.
+# Public header: include/cgw/fw/hash/sha256.hpp.
+# ============================================================
+# ASan/UBSan for the test build (CR-004 §3). Default ON so the test build is
+# sanitized; set -DCGW_FW_HASH_SANITIZE=OFF for a clean release/install lib.
+option(CGW_FW_HASH_SANITIZE "Build cgw-framework-hash with ASan/UBSan" ON)
+add_library(cgw-framework-hash STATIC src/sha256.cpp)
+set_target_properties(cgw-framework-hash PROPERTIES LINKER_LANGUAGE CXX)
+# CR-004 §3: export alias cgw::framework-hash.
+add_library(cgw::framework-hash ALIAS cgw-framework-hash)
+target_include_directories(cgw-framework-hash
+        PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<INSTALL_INTERFACE:include/cgw-framework>
+        )
+target_compile_options(cgw-framework-hash PRIVATE -Wall -Wextra -Werror)
+if(CGW_FW_HASH_SANITIZE)
+    target_compile_options(cgw-framework-hash PRIVATE
+            -fsanitize=address,undefined -fno-omit-frame-pointer)
+endif()
+
 # 配置文件
 configure_file(CGWFrameworkConfig.cmake.in
         "${CMAKE_CURRENT_BINARY_DIR}/CGWFrameworkConfig.cmake"
@@ -160,9 +183,17 @@ install(TARGETS cgw-framework-store
         INCLUDES DESTINATION include/cgw-framework
         )
 
+install(TARGETS cgw-framework-hash
+        EXPORT CGWFramework-targets
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib
+        RUNTIME DESTINATION bin
+        INCLUDES DESTINATION include/cgw-framework
+        )
+
 install(DIRECTORY include/
         DESTINATION include/cgw-framework
-        FILES_MATCHING PATTERN "*.h"
+        FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
         )
 
 # 导出配置
@@ -209,13 +240,29 @@ set(STORE_TEST_SOURCES
         tests/test_store_concurrency.cpp
         )
 
-foreach(TEST_SOURCE ${LOG_TEST_SOURCES} ${CONFIG_TEST_SOURCES} ${STORE_TEST_SOURCES})
+# 摘要组件测试 (cgw-framework-hash)
+set(HASH_TEST_SOURCES
+        tests/sha256_test.cpp
+        tests/sha256_differential_test.cpp
+        )
+
+foreach(TEST_SOURCE ${LOG_TEST_SOURCES} ${CONFIG_TEST_SOURCES} ${STORE_TEST_SOURCES} ${HASH_TEST_SOURCES})
     get_filename_component(TEST_NAME ${TEST_SOURCE} NAME_WE)
     add_executable(${TEST_NAME} ${TEST_SOURCE})
     if(${TEST_NAME} MATCHES "^test_config_")
         target_link_libraries(${TEST_NAME} PRIVATE cgw-framework-config yaml-cpp::yaml-cpp pthread)
     elseif(${TEST_NAME} MATCHES "^test_store_")
         target_link_libraries(${TEST_NAME} PRIVATE cgw-framework-store pthread)
+    elseif(${TEST_NAME} MATCHES "^sha256")
+        # CR-004 §3: hash 测试启用 -Wall -Wextra -Werror；测试构建 ASan/UBSan。
+        target_link_libraries(${TEST_NAME} PRIVATE cgw-framework-hash)
+        target_compile_options(${TEST_NAME} PRIVATE -Wall -Wextra -Werror)
+        if(CGW_FW_HASH_SANITIZE)
+            target_compile_options(${TEST_NAME} PRIVATE
+                    -fsanitize=address,undefined -fno-omit-frame-pointer)
+            set_target_properties(${TEST_NAME} PROPERTIES
+                    LINK_FLAGS "-fsanitize=address,undefined")
+        endif()
     else()
         target_link_libraries(${TEST_NAME} PRIVATE cgw-framework yaml-cpp::yaml-cpp pthread)
     endif()
@@ -255,3 +302,16 @@ if(EXISTS ${LIB_DIR}/yaml-cpp)
     target_link_directories(test_store_integration PRIVATE $<BUILD_INTERFACE:${LIB_DIR}/yaml-cpp>)
 endif()
 add_test(NAME test_store_integration COMMAND test_store_integration)
+
+# 最小消费样例 (CGW-FW-DSN-CR-004 §13): links the exported build-tree alias
+# cgw::framework-hash and demonstrates canonical-bytes -> SHA-256 -> compare.
+add_executable(hash_consumer examples/hash_consumer.cpp)
+target_link_libraries(hash_consumer PRIVATE cgw::framework-hash)
+if(CGW_FW_HASH_SANITIZE)
+    # The sanitized static lib requires the consumer to link the sanitizer
+    # runtime too. (Set -DCGW_FW_HASH_SANITIZE=OFF for a clean release lib.)
+    target_compile_options(hash_consumer PRIVATE
+            -fsanitize=address,undefined -fno-omit-frame-pointer)
+    set_target_properties(hash_consumer PROPERTIES
+            LINK_FLAGS "-fsanitize=address,undefined")
+endif()
