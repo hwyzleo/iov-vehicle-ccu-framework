@@ -136,6 +136,35 @@ if(CGW_FW_HASH_SANITIZE)
             -fsanitize=address,undefined -fno-omit-frame-pointer)
 endif()
 
+# ============================================================
+# cgw-framework-someip: independent static library (CGW-FW-DSN-CR-005)
+# SOME/IP Runtime/Provider/Client with a PRIVATE controlled backend.
+# Public headers: include/cgw/fw/someip/*.hpp. Backend is PRIVATE (src/).
+# ============================================================
+option(CGW_FW_SOMEIP_SANITIZE "Build cgw-framework-someip with ASan/UBSan" ON)
+add_library(cgw-framework-someip STATIC
+        src/someip_runtime.cpp
+        src/someip_provider.cpp
+        src/someip_client.cpp
+        src/someip_backend.cpp
+        )
+set_target_properties(cgw-framework-someip PROPERTIES LINKER_LANGUAGE CXX)
+# CR-005 §3: export alias cgw::framework-someip.
+add_library(cgw::framework-someip ALIAS cgw-framework-someip)
+target_include_directories(cgw-framework-someip
+        PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<INSTALL_INTERFACE:include/cgw-framework>
+        PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+        )
+target_link_libraries(cgw-framework-someip PUBLIC Threads::Threads)
+target_compile_options(cgw-framework-someip PRIVATE -Wall -Wextra)
+if(CGW_FW_SOMEIP_SANITIZE)
+    target_compile_options(cgw-framework-someip PRIVATE
+            -fsanitize=address,undefined -fno-omit-frame-pointer)
+endif()
+
 # 配置文件
 configure_file(CGWFrameworkConfig.cmake.in
         "${CMAKE_CURRENT_BINARY_DIR}/CGWFrameworkConfig.cmake"
@@ -184,6 +213,14 @@ install(TARGETS cgw-framework-store
         )
 
 install(TARGETS cgw-framework-hash
+        EXPORT CGWFramework-targets
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib
+        RUNTIME DESTINATION bin
+        INCLUDES DESTINATION include/cgw-framework
+        )
+
+install(TARGETS cgw-framework-someip
         EXPORT CGWFramework-targets
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
@@ -246,7 +283,15 @@ set(HASH_TEST_SOURCES
         tests/sha256_differential_test.cpp
         )
 
-foreach(TEST_SOURCE ${LOG_TEST_SOURCES} ${CONFIG_TEST_SOURCES} ${STORE_TEST_SOURCES} ${HASH_TEST_SOURCES})
+# SOME/IP 组件测试 (cgw-framework-someip)
+set(SOMEIP_TEST_SOURCES
+        tests/someip_runtime_test.cpp
+        tests/someip_provider_test.cpp
+        tests/someip_client_test.cpp
+        tests/someip_integration_test.cpp
+        )
+
+foreach(TEST_SOURCE ${LOG_TEST_SOURCES} ${CONFIG_TEST_SOURCES} ${STORE_TEST_SOURCES} ${HASH_TEST_SOURCES} ${SOMEIP_TEST_SOURCES})
     get_filename_component(TEST_NAME ${TEST_SOURCE} NAME_WE)
     add_executable(${TEST_NAME} ${TEST_SOURCE})
     if(${TEST_NAME} MATCHES "^test_config_")
@@ -258,6 +303,16 @@ foreach(TEST_SOURCE ${LOG_TEST_SOURCES} ${CONFIG_TEST_SOURCES} ${STORE_TEST_SOUR
         target_link_libraries(${TEST_NAME} PRIVATE cgw-framework-hash)
         target_compile_options(${TEST_NAME} PRIVATE -Wall -Wextra -Werror)
         if(CGW_FW_HASH_SANITIZE)
+            target_compile_options(${TEST_NAME} PRIVATE
+                    -fsanitize=address,undefined -fno-omit-frame-pointer)
+            set_target_properties(${TEST_NAME} PROPERTIES
+                    LINK_FLAGS "-fsanitize=address,undefined")
+        endif()
+    elseif(${TEST_NAME} MATCHES "^someip")
+        # CR-005 §14: someip 测试链接 cgw-framework-someip；ASan/UBSan。
+        target_link_libraries(${TEST_NAME} PRIVATE cgw-framework-someip pthread)
+        target_compile_options(${TEST_NAME} PRIVATE -Wall -Wextra)
+        if(CGW_FW_SOMEIP_SANITIZE)
             target_compile_options(${TEST_NAME} PRIVATE
                     -fsanitize=address,undefined -fno-omit-frame-pointer)
             set_target_properties(${TEST_NAME} PROPERTIES
@@ -313,5 +368,17 @@ if(CGW_FW_HASH_SANITIZE)
     target_compile_options(hash_consumer PRIVATE
             -fsanitize=address,undefined -fno-omit-frame-pointer)
     set_target_properties(hash_consumer PROPERTIES
+            LINK_FLAGS "-fsanitize=address,undefined")
+endif()
+
+# 最小 Provider/Client 消费样例 (CGW-FW-DSN-CR-005 §15.4): links the exported
+# build-tree alias cgw::framework-someip and demonstrates Provider/Client direct
+# communication via the controlled (fake) backend.
+add_executable(someip_consumer examples/someip_consumer.cpp)
+target_link_libraries(someip_consumer PRIVATE cgw::framework-someip)
+if(CGW_FW_SOMEIP_SANITIZE)
+    target_compile_options(someip_consumer PRIVATE
+            -fsanitize=address,undefined -fno-omit-frame-pointer)
+    set_target_properties(someip_consumer PROPERTIES
             LINK_FLAGS "-fsanitize=address,undefined")
 endif()
