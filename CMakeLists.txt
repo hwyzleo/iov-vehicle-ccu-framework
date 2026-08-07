@@ -5,6 +5,9 @@ cmake_minimum_required(VERSION 3.10)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# 线程库 (cgw-framework-store 使用 std::thread/std::mutex)
+find_package(Threads REQUIRED)
+
 # 收集源文件
 file(GLOB FRAMEWORK_SOURCES src/log/*.cpp)
 file(GLOB_RECURSE FRAMEWORK_HEADERS include/*.h)
@@ -95,6 +98,21 @@ if(TARGET yaml-cpp::yaml-cpp)
     target_link_libraries(cgw-framework-config PRIVATE yaml-cpp::yaml-cpp)
 endif()
 
+# ============================================================
+# cgw-framework-store: independent static library (CGW-FW-DSN-CR-003)
+# ============================================================
+file(GLOB STORE_SOURCES src/store/*.cpp)
+add_library(cgw-framework-store STATIC ${STORE_SOURCES})
+set_target_properties(cgw-framework-store PROPERTIES LINKER_LANGUAGE CXX)
+target_include_directories(cgw-framework-store
+        PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<INSTALL_INTERFACE:include/cgw-framework>
+        PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+        )
+target_link_libraries(cgw-framework-store PUBLIC Threads::Threads)
+
 # 配置文件
 configure_file(CGWFrameworkConfig.cmake.in
         "${CMAKE_CURRENT_BINARY_DIR}/CGWFrameworkConfig.cmake"
@@ -127,6 +145,14 @@ install(TARGETS cgw-framework
         )
 
 install(TARGETS cgw-framework-config
+        EXPORT CGWFramework-targets
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib
+        RUNTIME DESTINATION bin
+        INCLUDES DESTINATION include/cgw-framework
+        )
+
+install(TARGETS cgw-framework-store
         EXPORT CGWFramework-targets
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
@@ -172,11 +198,24 @@ set(CONFIG_TEST_SOURCES
         tests/test_config_validator.cpp
         )
 
-foreach(TEST_SOURCE ${LOG_TEST_SOURCES} ${CONFIG_TEST_SOURCES})
+# 存储组件测试 (cgw-framework-store)
+set(STORE_TEST_SOURCES
+        tests/test_store_path_resolver.cpp
+        tests/test_store_atomic_writer.cpp
+        tests/test_store_key_lock.cpp
+        tests/test_store_serializer.cpp
+        tests/test_store_api.cpp
+        tests/test_store_flush_policy.cpp
+        tests/test_store_concurrency.cpp
+        )
+
+foreach(TEST_SOURCE ${LOG_TEST_SOURCES} ${CONFIG_TEST_SOURCES} ${STORE_TEST_SOURCES})
     get_filename_component(TEST_NAME ${TEST_SOURCE} NAME_WE)
     add_executable(${TEST_NAME} ${TEST_SOURCE})
     if(${TEST_NAME} MATCHES "^test_config_")
         target_link_libraries(${TEST_NAME} PRIVATE cgw-framework-config yaml-cpp::yaml-cpp pthread)
+    elseif(${TEST_NAME} MATCHES "^test_store_")
+        target_link_libraries(${TEST_NAME} PRIVATE cgw-framework-store pthread)
     else()
         target_link_libraries(${TEST_NAME} PRIVATE cgw-framework yaml-cpp::yaml-cpp pthread)
     endif()
@@ -203,3 +242,16 @@ if(EXISTS ${LIB_DIR}/yaml-cpp)
     target_link_directories(test_config_integration PRIVATE $<BUILD_INTERFACE:${LIB_DIR}/yaml-cpp>)
 endif()
 add_test(NAME test_config_integration COMMAND test_config_integration)
+
+# 存储与配置集成测试 (config root 注入 -> Store::open)
+add_executable(test_store_integration tests/test_store_integration.cpp)
+target_link_libraries(test_store_integration PRIVATE cgw-framework-store cgw-framework-config yaml-cpp::yaml-cpp pthread)
+target_include_directories(test_store_integration PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/third_party/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+        )
+if(EXISTS ${LIB_DIR}/yaml-cpp)
+    target_link_directories(test_store_integration PRIVATE $<BUILD_INTERFACE:${LIB_DIR}/yaml-cpp>)
+endif()
+add_test(NAME test_store_integration COMMAND test_store_integration)
