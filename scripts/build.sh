@@ -310,14 +310,14 @@ show_summary() {
     echo "构建类型:   ${BUILD_TYPE}"
     echo ""
     echo "构建产物:"
-    echo "  - 共享库:    ${BUILD_DIR}/libcgw-framework.so"
+    echo "  - 静态库:    ${BUILD_DIR}/libcgw-framework-log.a"
     if [ "$RUN_TESTS" = true ]; then
         echo "  - 测试程序:  ${BUILD_DIR}/tests/"
     fi
     echo ""
     if [ "$INSTALL_AFTER_BUILD" = true ]; then
         echo "安装位置:"
-        echo "  - 共享库:    ${INSTALL_PREFIX}/lib/libcgw-framework.dylib"
+        echo "  - 静态库:    ${INSTALL_PREFIX}/lib/libcgw-framework-log.a"
         echo "  - 静态库:    ${INSTALL_PREFIX}/lib/libcgw-framework-config.a"
         echo "  - 头文件:    ${INSTALL_PREFIX}/include/cgw-framework/"
         echo "  - CMake配置: ${INSTALL_PREFIX}/lib/cmake/CGWFramework/"

@@ -3,8 +3,8 @@ exec_prefix=${prefix}
 libdir=${exec_prefix}/lib
 includedir=${prefix}/include/cgw-framework
 
-Name: cgw-framework
-Description: CGW Framework Library
+Name: cgw-framework-log
+Description: CGW Framework Log Library
 Version: @PROJECT_VERSION@
-Libs: -L${libdir} -lcgw-framework
+Libs: -L${libdir} -lcgw-framework-log
 Cflags: -I${includedir}

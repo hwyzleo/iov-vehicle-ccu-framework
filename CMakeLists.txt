@@ -12,14 +12,12 @@ find_package(Threads REQUIRED)
 file(GLOB FRAMEWORK_SOURCES src/log/*.cpp)
 file(GLOB_RECURSE FRAMEWORK_HEADERS include/*.h)
 
-# 创建框架库
-add_library(cgw-framework SHARED
+# 日志组件静态库 (CGW-FW-DSN-CR-001: cgw-framework-log, STATIC, 与设计文档一致)
+add_library(cgw-framework-log STATIC
         ${FRAMEWORK_SOURCES}
         ${FRAMEWORK_HEADERS}
         )
-set_target_properties(cgw-framework PROPERTIES
-        LINKER_LANGUAGE CXX
-        )
+set_target_properties(cgw-framework-log PROPERTIES LINKER_LANGUAGE CXX)
 
 # 根据不同的环境设置不同的库文件目录
 if (CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64")
@@ -44,34 +42,16 @@ if(EXISTS ${LIB_DIR}/yaml-cpp)
         IMPORTED_LOCATION "${LIB_DIR}/yaml-cpp/libyaml-cpp.a"
         INTERFACE_INCLUDE_DIRECTORIES "${PROJECT_SOURCE_DIR}/third_party/include"
     )
-    # 使用LINK_FLAGS直接传递链接选项，避免CMake重排
-    if(APPLE)
-        set_target_properties(cgw-framework PROPERTIES
-            LINK_FLAGS "-force_load ${LIB_DIR}/yaml-cpp/libyaml-cpp.a"
-        )
-    else()
-        set_target_properties(cgw-framework PROPERTIES
-            LINK_FLAGS "-Wl,--whole-archive ${LIB_DIR}/yaml-cpp/libyaml-cpp.a -Wl,--no-whole-archive"
-        )
-    endif()
-
-    # 拷贝 yaml-cpp dylib 到 build 目录
-    file(GLOB YAML_CPP_DYLIBS "${LIB_DIR}/yaml-cpp/*.dylib" "${LIB_DIR}/yaml-cpp/*.so")
-    foreach(YAML_CPP_DYLIB ${YAML_CPP_DYLIBS})
-        add_custom_command(TARGET cgw-framework POST_BUILD
-                COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                ${YAML_CPP_DYLIB}
-                $<TARGET_FILE_DIR:cgw-framework>
-                COMMENT "Copying ${YAML_CPP_DYLIB} to build directory"
-                )
-    endforeach()
+    # cgw-framework-log 为静态库，yaml-cpp 作为 PRIVATE 依赖在最终链接时解析；
+    # 不再需要 SHARED 的 force_load/whole-archive 嵌入与 dylib 拷贝（与 config 库一致）。
+    target_link_libraries(cgw-framework-log PRIVATE yaml-cpp::yaml-cpp)
 else()
     message(WARNING "YAML library directory not found: ${LIB_DIR}/yaml-cpp")
 endif()
 # OpenSSL not required for CGW framework-log
 
 # 设置包含目录
-target_include_directories(cgw-framework
+target_include_directories(cgw-framework-log
         PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/third_party/include>
@@ -79,6 +59,9 @@ target_include_directories(cgw-framework
         PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src
         )
+
+# 日志异步队列使用 std::thread，PUBLIC 暴露线程依赖（与 store 库一致）
+target_link_libraries(cgw-framework-log PUBLIC Threads::Threads)
 
 # ============================================================
 # cgw-framework-config: independent static library (CGW-FW-DSN-CR-002)
@@ -188,7 +171,7 @@ install(FILES
         )
 
 # 安装规则
-install(TARGETS cgw-framework
+install(TARGETS cgw-framework-log
         EXPORT CGWFramework-targets
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
@@ -243,7 +226,7 @@ install(EXPORT CGWFramework-targets
 # 单元测试
 enable_testing()
 
-# 日志组件测试 (cgw-framework)
+# 日志组件测试 (cgw-framework-log)
 set(LOG_TEST_SOURCES
         tests/test_log_types.cpp
         tests/test_log_config_adapter.cpp
@@ -319,7 +302,7 @@ foreach(TEST_SOURCE ${LOG_TEST_SOURCES} ${CONFIG_TEST_SOURCES} ${STORE_TEST_SOUR
                     LINK_FLAGS "-fsanitize=address,undefined")
         endif()
     else()
-        target_link_libraries(${TEST_NAME} PRIVATE cgw-framework yaml-cpp::yaml-cpp pthread)
+        target_link_libraries(${TEST_NAME} PRIVATE cgw-framework-log yaml-cpp::yaml-cpp pthread)
     endif()
     target_include_directories(${TEST_NAME} PRIVATE
             ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -334,7 +317,7 @@ endforeach()
 
 # 配置与日志集成测试 (config -> LogConfig -> Logger::init)
 add_executable(test_config_integration tests/test_config_integration.cpp)
-target_link_libraries(test_config_integration PRIVATE cgw-framework cgw-framework-config yaml-cpp::yaml-cpp pthread)
+target_link_libraries(test_config_integration PRIVATE cgw-framework-log cgw-framework-config yaml-cpp::yaml-cpp pthread)
 target_include_directories(test_config_integration PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${CMAKE_CURRENT_SOURCE_DIR}/third_party/include
