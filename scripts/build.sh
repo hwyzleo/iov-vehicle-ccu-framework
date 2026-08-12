@@ -43,6 +43,8 @@ INSTALL_AFTER_BUILD=false
 BUILD_TYPE="Debug"
 # 安装前缀来自 cgw-env.sh（CGW_PREFIX），--prefix 可覆盖
 INSTALL_PREFIX="${CGW_PREFIX}"
+# 安装指定 component（空表示安装全部）。CGW-FW-DSN-CR-006 §4。
+INSTALL_COMPONENT=""
 
 # 显示帮助信息
 show_help() {
@@ -54,6 +56,7 @@ show_help() {
     echo "  --install        构建后安装到 --prefix 指定的目录"
     echo "  --prefix <DIR>   安装前缀（默认 ${CGW_PREFIX}，来自 scripts/cgw-env.sh）"
     echo "  --release        Release 模式构建（默认 Debug）"
+    echo "  --component <N>  仅安装指定 component（cgw-framework-sdk / cgw-framework-runtime）"
     echo "  --help           显示帮助信息"
     echo ""
     echo "示例:"
@@ -204,15 +207,24 @@ configure_project() {
     print_info "配置 CMake 项目..."
     print_info "  构建类型: ${BUILD_TYPE}"
     print_info "  安装前缀: ${INSTALL_PREFIX}"
+    print_info "  依赖前缀: ${CGW_DEP_PREFIX_PATH}"
+
+    # 确保受控 yaml-cpp TARGET 依赖已 staging（CR-006 §6）。
+    if [[ ! -f "${CGW_DEP_PREFIX_PATH}/lib/cmake/yaml-cpp/yaml-cppConfig.cmake" ]]; then
+        print_info "staging 受控 yaml-cpp 依赖..."
+        bash "${PROJECT_ROOT}/scripts/stage-yaml-cpp.sh"
+    fi
 
     mkdir -p "$BUILD_DIR"
     cd "$BUILD_DIR"
 
     # CMAKE_INSTALL_PREFIX 必须在 configure 阶段给定：
-    # CGWFrameworkConfig.cmake 需要它来定位头文件
+    # CGWFrameworkConfig.cmake 需要它来定位头文件。
+    # CMAKE_PREFIX_PATH 指向受控依赖前缀，供 find_package(yaml-cpp) 解析。
     cmake .. \
         -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
         -DCMAKE_INSTALL_PREFIX="${INSTALL_PREFIX}" \
+        -DCMAKE_PREFIX_PATH="${CGW_DEP_PREFIX_PATH}" \
         -DBUILD_TESTS=$([ "$RUN_TESTS" = true ] && echo "ON" || echo "OFF")
 
     if [ $? -ne 0 ]; then
@@ -277,16 +289,24 @@ install_project() {
     fi
 
     print_info "安装项目到: ${INSTALL_PREFIX}"
+    if [[ -n "${INSTALL_COMPONENT}" ]]; then
+        print_info "  仅安装 component: ${INSTALL_COMPONENT}"
+    fi
 
     cd "$BUILD_DIR"
+
+    local install_args=(cmake --install .)
+    if [[ -n "${INSTALL_COMPONENT}" ]]; then
+        install_args+=(--component "${INSTALL_COMPONENT}")
+    fi
 
     # 仅在前缀不可写时才用 sudo（如 /usr/local）；
     # 默认的 ${HOME}/.local 无需提权，避免产出 root 属主的文件
     if mkdir -p "${INSTALL_PREFIX}" 2>/dev/null && [ -w "${INSTALL_PREFIX}" ]; then
-        cmake --install .
+        "${install_args[@]}"
     else
         print_warning "前缀 ${INSTALL_PREFIX} 不可写，使用 sudo 安装"
-        sudo cmake --install .
+        sudo "${install_args[@]}"
     fi
 
     if [ $? -ne 0 ]; then
@@ -295,7 +315,7 @@ install_project() {
     fi
 
     print_success "安装完成"
-    print_info "消费方请使用: -DCGWFramework_DIR=${INSTALL_PREFIX}/lib/cmake/CGWFramework"
+    print_info "消费方请使用: -DCMAKE_PREFIX_PATH=${INSTALL_PREFIX};${CGW_DEP_PREFIX_PATH}"
     return 0
 }
 
@@ -310,17 +330,20 @@ show_summary() {
     echo "构建类型:   ${BUILD_TYPE}"
     echo ""
     echo "构建产物:"
-    echo "  - 静态库:    ${BUILD_DIR}/libcgw-framework-log.a"
+    echo "  - 静态库:    ${BUILD_DIR}/libcgw-framework-{config,log,store,hash,someip}.a"
     if [ "$RUN_TESTS" = true ]; then
         echo "  - 测试程序:  ${BUILD_DIR}/tests/"
     fi
     echo ""
     if [ "$INSTALL_AFTER_BUILD" = true ]; then
         echo "安装位置:"
-        echo "  - 静态库:    ${INSTALL_PREFIX}/lib/libcgw-framework-log.a"
-        echo "  - 静态库:    ${INSTALL_PREFIX}/lib/libcgw-framework-config.a"
-        echo "  - 头文件:    ${INSTALL_PREFIX}/include/cgw-framework/"
+        echo "  - 静态库:    ${INSTALL_PREFIX}/lib/libcgw-framework-*.a"
+        echo "  - 头文件:    ${INSTALL_PREFIX}/include/"
         echo "  - CMake配置: ${INSTALL_PREFIX}/lib/cmake/CGWFramework/"
+        echo "  - pkg-config: ${INSTALL_PREFIX}/lib/pkgconfig/cgw-framework-*.pc"
+        if [[ -n "${INSTALL_COMPONENT}" ]]; then
+            echo "  - component: ${INSTALL_COMPONENT}"
+        fi
     fi
     echo "=========================================="
 }
@@ -355,6 +378,18 @@ parse_args() {
                 ;;
             --release)
                 BUILD_TYPE="Release"
+                shift
+                ;;
+            --component)
+                if [ -z "$2" ]; then
+                    print_error "--component 需要一个名称参数"
+                    exit 1
+                fi
+                INSTALL_COMPONENT="$2"
+                shift 2
+                ;;
+            --component=*)
+                INSTALL_COMPONENT="${1#--component=}"
                 shift
                 ;;
             --help)

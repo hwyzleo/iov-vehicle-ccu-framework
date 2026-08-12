@@ -1,67 +1,42 @@
-project(CGW-Framework)
-cmake_minimum_required(VERSION 3.10)
+# CGW-Framework top-level build (CGW-FW-DSN-CR-006 install/release contract)
+cmake_minimum_required(VERSION 3.20)
 
-# 设置C++标准
+project(CGW-Framework VERSION 0.1.0 LANGUAGES CXX)
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# 线程库 (cgw-framework-store 使用 std::thread/std::mutex)
+# Standard install directories + package config helpers (CR-006 §3/§5).
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
+
+# Threads: cgw-framework-log/store/someip use std::thread/std::mutex.
 find_package(Threads REQUIRED)
 
-# 收集源文件
+# yaml-cpp: controlled TARGET dependency (CR-006 §6). MUST resolve from a
+# controlled dependency prefix (CGW_DEP_STAGING) or an equivalent controlled
+# CMake package root. No silent EXISTS fallback; configure fails closed when
+# the matching package/target is absent.
+find_package(yaml-cpp CONFIG REQUIRED)
+
+# ============================================================
+# cgw-framework-log: independent static library (CGW-FW-DSN-CR-001)
+# yaml-cpp is PRIVATE (only src/log/log_config_adapter.cpp includes it).
+# ============================================================
 file(GLOB FRAMEWORK_SOURCES src/log/*.cpp)
-file(GLOB_RECURSE FRAMEWORK_HEADERS include/*.h)
-
-# 日志组件静态库 (CGW-FW-DSN-CR-001: cgw-framework-log, STATIC, 与设计文档一致)
-add_library(cgw-framework-log STATIC
-        ${FRAMEWORK_SOURCES}
-        ${FRAMEWORK_HEADERS}
-        )
+add_library(cgw-framework-log STATIC ${FRAMEWORK_SOURCES})
 set_target_properties(cgw-framework-log PROPERTIES LINKER_LANGUAGE CXX)
-
-# 根据不同的环境设置不同的库文件目录
-if (CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64")
-    if (APPLE)
-        set(LIB_DIR ${PROJECT_SOURCE_DIR}/third_party/lib/arm64-apple-darwin)
-    elseif (UNIX AND NOT APPLE)
-        set(LIB_DIR ${PROJECT_SOURCE_DIR}/third_party/lib/aarch64-linux-gnu)
-    endif ()
-elseif (CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64")
-    if (APPLE)
-        set(LIB_DIR ${PROJECT_SOURCE_DIR}/third_party/lib/x86_64-apple-darwin)
-    elseif (UNIX AND NOT APPLE)
-        set(LIB_DIR ${PROJECT_SOURCE_DIR}/third_party/lib/x86_64-linux-gnu)
-    endif ()
-endif ()
-
-# 添加三方库
-if(EXISTS ${LIB_DIR}/yaml-cpp)
-    # 使用IMPORTED静态库提供include路径
-    add_library(yaml-cpp::yaml-cpp STATIC IMPORTED)
-    set_target_properties(yaml-cpp::yaml-cpp PROPERTIES
-        IMPORTED_LOCATION "${LIB_DIR}/yaml-cpp/libyaml-cpp.a"
-        INTERFACE_INCLUDE_DIRECTORIES "${PROJECT_SOURCE_DIR}/third_party/include"
-    )
-    # cgw-framework-log 为静态库，yaml-cpp 作为 PRIVATE 依赖在最终链接时解析；
-    # 不再需要 SHARED 的 force_load/whole-archive 嵌入与 dylib 拷贝（与 config 库一致）。
-    target_link_libraries(cgw-framework-log PRIVATE yaml-cpp::yaml-cpp)
-else()
-    message(WARNING "YAML library directory not found: ${LIB_DIR}/yaml-cpp")
-endif()
-# OpenSSL not required for CGW framework-log
-
-# 设置包含目录
 target_include_directories(cgw-framework-log
         PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/third_party/include>
-        $<INSTALL_INTERFACE:include/cgw-framework>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
         PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src
         )
-
-# 日志异步队列使用 std::thread，PUBLIC 暴露线程依赖（与 store 库一致）
-target_link_libraries(cgw-framework-log PUBLIC Threads::Threads)
+# Threads PUBLIC: the async queue exposes std::thread in the link interface.
+target_link_libraries(cgw-framework-log
+        PUBLIC Threads::Threads
+        PRIVATE yaml-cpp::yaml-cpp)
 
 # ============================================================
 # cgw-framework-config: independent static library (CGW-FW-DSN-CR-002)
@@ -72,14 +47,11 @@ set_target_properties(cgw-framework-config PROPERTIES LINKER_LANGUAGE CXX)
 target_include_directories(cgw-framework-config
         PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-        $<INSTALL_INTERFACE:include/cgw-framework>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
         PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src
-        ${CMAKE_CURRENT_SOURCE_DIR}/third_party/include
         )
-if(TARGET yaml-cpp::yaml-cpp)
-    target_link_libraries(cgw-framework-config PRIVATE yaml-cpp::yaml-cpp)
-endif()
+target_link_libraries(cgw-framework-config PRIVATE yaml-cpp::yaml-cpp)
 
 # ============================================================
 # cgw-framework-store: independent static library (CGW-FW-DSN-CR-003)
@@ -90,7 +62,7 @@ set_target_properties(cgw-framework-store PROPERTIES LINKER_LANGUAGE CXX)
 target_include_directories(cgw-framework-store
         PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-        $<INSTALL_INTERFACE:include/cgw-framework>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
         PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src
         )
@@ -98,20 +70,22 @@ target_link_libraries(cgw-framework-store PUBLIC Threads::Threads)
 
 # ============================================================
 # cgw-framework-hash: independent static library (CGW-FW-DSN-CR-004)
-# FIPS 180-4 SHA-256; no config/store/log/SOME-IP dependency.
-# Public header: include/cgw/fw/hash/sha256.hpp.
+# FIPS 180-4 SHA-256 + reversible byte<->Hex codec (CGW-FW-DSN-CR-007);
+# no config/store/log/SOME-IP dependency.
+# Public headers: include/cgw/fw/hash/sha256.hpp, include/cgw/fw/hash/hex.hpp.
 # ============================================================
-# ASan/UBSan for the test build (CR-004 §3). Default ON so the test build is
-# sanitized; set -DCGW_FW_HASH_SANITIZE=OFF for a clean release/install lib.
-option(CGW_FW_HASH_SANITIZE "Build cgw-framework-hash with ASan/UBSan" ON)
-add_library(cgw-framework-hash STATIC src/sha256.cpp)
+# Sanitize OFF by default so installed archives are clean and linkable by an
+# uninstrumented consumer (CR-006 §11). Devs opt in with
+# -DCGW_FW_HASH_SANITIZE=ON for a sanitized test build.
+option(CGW_FW_HASH_SANITIZE "Build cgw-framework-hash with ASan/UBSan" OFF)
+add_library(cgw-framework-hash STATIC src/sha256.cpp src/hex.cpp)
 set_target_properties(cgw-framework-hash PROPERTIES LINKER_LANGUAGE CXX)
-# CR-004 §3: export alias cgw::framework-hash.
+# CR-004 §3: build-tree alias cgw::framework-hash (not installed).
 add_library(cgw::framework-hash ALIAS cgw-framework-hash)
 target_include_directories(cgw-framework-hash
         PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-        $<INSTALL_INTERFACE:include/cgw-framework>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
         )
 target_compile_options(cgw-framework-hash PRIVATE -Wall -Wextra -Werror)
 if(CGW_FW_HASH_SANITIZE)
@@ -124,7 +98,7 @@ endif()
 # SOME/IP Runtime/Provider/Client with a PRIVATE controlled backend.
 # Public headers: include/cgw/fw/someip/*.hpp. Backend is PRIVATE (src/).
 # ============================================================
-option(CGW_FW_SOMEIP_SANITIZE "Build cgw-framework-someip with ASan/UBSan" ON)
+option(CGW_FW_SOMEIP_SANITIZE "Build cgw-framework-someip with ASan/UBSan" OFF)
 add_library(cgw-framework-someip STATIC
         src/someip_runtime.cpp
         src/someip_provider.cpp
@@ -132,12 +106,12 @@ add_library(cgw-framework-someip STATIC
         src/someip_backend.cpp
         )
 set_target_properties(cgw-framework-someip PROPERTIES LINKER_LANGUAGE CXX)
-# CR-005 §3: export alias cgw::framework-someip.
+# CR-005 §3: build-tree alias cgw::framework-someip (not installed).
 add_library(cgw::framework-someip ALIAS cgw-framework-someip)
 target_include_directories(cgw-framework-someip
         PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-        $<INSTALL_INTERFACE:include/cgw-framework>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
         PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src
         )
@@ -148,82 +122,84 @@ if(CGW_FW_SOMEIP_SANITIZE)
             -fsanitize=address,undefined -fno-omit-frame-pointer)
 endif()
 
-# 配置文件
-configure_file(CGWFrameworkConfig.cmake.in
-        "${CMAKE_CURRENT_BINARY_DIR}/CGWFrameworkConfig.cmake"
-        @ONLY)
-
-# 安装配置文件
-install(FILES
-        "${CMAKE_CURRENT_BINARY_DIR}/CGWFrameworkConfig.cmake"
-        DESTINATION lib/cmake/CGWFramework
-        )
-
-# 配置 pkg-config 文件
-configure_file(CGWFramework.pc.in
-        "${CMAKE_CURRENT_BINARY_DIR}/CGWFramework.pc"
-        @ONLY)
-
-# 安装 pkg-config 文件
-install(FILES
-        "${CMAKE_CURRENT_BINARY_DIR}/CGWFramework.pc"
-        DESTINATION lib/pkgconfig
-        )
-
-# 安装规则
-install(TARGETS cgw-framework-log
-        EXPORT CGWFramework-targets
-        LIBRARY DESTINATION lib
-        ARCHIVE DESTINATION lib
-        RUNTIME DESTINATION bin
-        INCLUDES DESTINATION include/cgw-framework
-        )
-
-install(TARGETS cgw-framework-config
-        EXPORT CGWFramework-targets
-        LIBRARY DESTINATION lib
-        ARCHIVE DESTINATION lib
-        RUNTIME DESTINATION bin
-        INCLUDES DESTINATION include/cgw-framework
-        )
-
-install(TARGETS cgw-framework-store
-        EXPORT CGWFramework-targets
-        LIBRARY DESTINATION lib
-        ARCHIVE DESTINATION lib
-        RUNTIME DESTINATION bin
-        INCLUDES DESTINATION include/cgw-framework
-        )
-
-install(TARGETS cgw-framework-hash
-        EXPORT CGWFramework-targets
-        LIBRARY DESTINATION lib
-        ARCHIVE DESTINATION lib
-        RUNTIME DESTINATION bin
-        INCLUDES DESTINATION include/cgw-framework
-        )
-
-install(TARGETS cgw-framework-someip
-        EXPORT CGWFramework-targets
-        LIBRARY DESTINATION lib
-        ARCHIVE DESTINATION lib
-        RUNTIME DESTINATION bin
-        INCLUDES DESTINATION include/cgw-framework
-        )
+# ============================================================
+# Install rules (CGW-FW-DSN-CR-006 §3/§4)
+# - SDK component: headers + archives + CMake package + pkg-config.
+# - Runtime component: empty for the current static-only build; the empty set
+#   is an explicit, recorded state (no placeholder files are fabricated).
+# - Every formal install rule declares its COMPONENT; no Unspecified fallback.
+# ============================================================
+install(TARGETS
+        cgw-framework-config
+        cgw-framework-log
+        cgw-framework-store
+        cgw-framework-hash
+        cgw-framework-someip
+        EXPORT CGWFrameworkTargets
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+                COMPONENT cgw-framework-sdk
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+                COMPONENT cgw-framework-runtime
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+                COMPONENT cgw-framework-runtime
+        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 install(DIRECTORY include/
-        DESTINATION include/cgw-framework
-        FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
-        )
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+        COMPONENT cgw-framework-sdk
+        FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp")
 
-# 导出配置
-install(EXPORT CGWFramework-targets
+# Relocatable CMake package config (CR-006 §5): @PACKAGE_INIT@ derives the
+# prefix from the config file location; no baked absolute/host paths.
+configure_package_config_file(
+        "${CMAKE_CURRENT_SOURCE_DIR}/CGWFrameworkConfig.cmake.in"
+        "${CMAKE_CURRENT_BINARY_DIR}/CGWFrameworkConfig.cmake"
+        INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/CGWFramework
+        PATH_VARS CMAKE_INSTALL_INCLUDEDIR CMAKE_INSTALL_LIBDIR)
+write_basic_package_version_file(
+        "${CMAKE_CURRENT_BINARY_DIR}/CGWFrameworkConfigVersion.cmake"
+        VERSION ${PROJECT_VERSION}
+        COMPATIBILITY SameMajorVersion)
+
+install(FILES
+        "${CMAKE_CURRENT_BINARY_DIR}/CGWFrameworkConfig.cmake"
+        "${CMAKE_CURRENT_BINARY_DIR}/CGWFrameworkConfigVersion.cmake"
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/CGWFramework
+        COMPONENT cgw-framework-sdk)
+
+install(EXPORT CGWFrameworkTargets
         FILE CGWFrameworkTargets.cmake
         NAMESPACE CGWFramework::
-        DESTINATION lib/cmake/CGWFramework
-        )
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/CGWFramework
+        COMPONENT cgw-framework-sdk)
 
-# 单元测试
+# pkg-config per component (CR-006 §4). config/log carry yaml-cpp as
+# Requires.private (static link); store/someip carry pthread as Libs.private.
+foreach(comp config log store hash someip)
+    set(PC_NAME           "cgw-framework-${comp}")
+    set(PC_DESCRIPTION    "CGW Framework ${comp} library")
+    set(PC_LIB            "cgw-framework-${comp}")
+    set(PC_REQUIRES       "")
+    set(PC_LIBS_PRIVATE   "")
+    if(comp STREQUAL "config" OR comp STREQUAL "log")
+        set(PC_REQUIRES "yaml-cpp")
+    endif()
+    if(comp STREQUAL "store" OR comp STREQUAL "someip")
+        set(PC_LIBS_PRIVATE "-lpthread")
+    endif()
+    configure_file(
+            "${CMAKE_CURRENT_SOURCE_DIR}/cgw-framework.pc.in"
+            "${CMAKE_CURRENT_BINARY_DIR}/cgw-framework-${comp}.pc"
+            @ONLY)
+    install(FILES
+            "${CMAKE_CURRENT_BINARY_DIR}/cgw-framework-${comp}.pc"
+            DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
+            COMPONENT cgw-framework-sdk)
+endforeach()
+
+# ============================================================
+# Unit tests (not installed; carry no install COMPONENT)
+# ============================================================
 enable_testing()
 
 # 日志组件测试 (cgw-framework-log)
@@ -264,6 +240,7 @@ set(STORE_TEST_SOURCES
 set(HASH_TEST_SOURCES
         tests/sha256_test.cpp
         tests/sha256_differential_test.cpp
+        tests/hex_test.cpp
         )
 
 # SOME/IP 组件测试 (cgw-framework-someip)
@@ -281,8 +258,8 @@ foreach(TEST_SOURCE ${LOG_TEST_SOURCES} ${CONFIG_TEST_SOURCES} ${STORE_TEST_SOUR
         target_link_libraries(${TEST_NAME} PRIVATE cgw-framework-config yaml-cpp::yaml-cpp pthread)
     elseif(${TEST_NAME} MATCHES "^test_store_")
         target_link_libraries(${TEST_NAME} PRIVATE cgw-framework-store pthread)
-    elseif(${TEST_NAME} MATCHES "^sha256")
-        # CR-004 §3: hash 测试启用 -Wall -Wextra -Werror；测试构建 ASan/UBSan。
+    elseif(${TEST_NAME} MATCHES "^(sha256|hex)")
+        # CR-004 §3 / CR-007 §8.4: hash 测试启用 -Wall -Wextra -Werror；测试构建 ASan/UBSan。
         target_link_libraries(${TEST_NAME} PRIVATE cgw-framework-hash)
         target_compile_options(${TEST_NAME} PRIVATE -Wall -Wextra -Werror)
         if(CGW_FW_HASH_SANITIZE)
@@ -306,12 +283,8 @@ foreach(TEST_SOURCE ${LOG_TEST_SOURCES} ${CONFIG_TEST_SOURCES} ${STORE_TEST_SOUR
     endif()
     target_include_directories(${TEST_NAME} PRIVATE
             ${CMAKE_CURRENT_SOURCE_DIR}/include
-            ${CMAKE_CURRENT_SOURCE_DIR}/third_party/include
             ${CMAKE_CURRENT_SOURCE_DIR}/src
             )
-    if(EXISTS ${LIB_DIR}/yaml-cpp)
-        target_link_directories(${TEST_NAME} PRIVATE $<BUILD_INTERFACE:${LIB_DIR}/yaml-cpp>)
-    endif()
     add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
 endforeach()
 
@@ -320,12 +293,8 @@ add_executable(test_config_integration tests/test_config_integration.cpp)
 target_link_libraries(test_config_integration PRIVATE cgw-framework-log cgw-framework-config yaml-cpp::yaml-cpp pthread)
 target_include_directories(test_config_integration PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/include
-        ${CMAKE_CURRENT_SOURCE_DIR}/third_party/include
         ${CMAKE_CURRENT_SOURCE_DIR}/src
         )
-if(EXISTS ${LIB_DIR}/yaml-cpp)
-    target_link_directories(test_config_integration PRIVATE $<BUILD_INTERFACE:${LIB_DIR}/yaml-cpp>)
-endif()
 add_test(NAME test_config_integration COMMAND test_config_integration)
 
 # 存储与配置集成测试 (config root 注入 -> Store::open)
@@ -333,12 +302,8 @@ add_executable(test_store_integration tests/test_store_integration.cpp)
 target_link_libraries(test_store_integration PRIVATE cgw-framework-store cgw-framework-config yaml-cpp::yaml-cpp pthread)
 target_include_directories(test_store_integration PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/include
-        ${CMAKE_CURRENT_SOURCE_DIR}/third_party/include
         ${CMAKE_CURRENT_SOURCE_DIR}/src
         )
-if(EXISTS ${LIB_DIR}/yaml-cpp)
-    target_link_directories(test_store_integration PRIVATE $<BUILD_INTERFACE:${LIB_DIR}/yaml-cpp>)
-endif()
 add_test(NAME test_store_integration COMMAND test_store_integration)
 
 # 最小消费样例 (CGW-FW-DSN-CR-004 §13): links the exported build-tree alias
@@ -346,8 +311,6 @@ add_test(NAME test_store_integration COMMAND test_store_integration)
 add_executable(hash_consumer examples/hash_consumer.cpp)
 target_link_libraries(hash_consumer PRIVATE cgw::framework-hash)
 if(CGW_FW_HASH_SANITIZE)
-    # The sanitized static lib requires the consumer to link the sanitizer
-    # runtime too. (Set -DCGW_FW_HASH_SANITIZE=OFF for a clean release lib.)
     target_compile_options(hash_consumer PRIVATE
             -fsanitize=address,undefined -fno-omit-frame-pointer)
     set_target_properties(hash_consumer PROPERTIES
@@ -364,4 +327,39 @@ if(CGW_FW_SOMEIP_SANITIZE)
             -fsanitize=address,undefined -fno-omit-frame-pointer)
     set_target_properties(someip_consumer PROPERTIES
             LINK_FLAGS "-fsanitize=address,undefined")
+endif()
+
+# ============================================================
+# Install/packaging tests (CGW-FW-DSN-CR-006)
+# Fast unit checks run with the normal test build; the heavier end-to-end
+# installed-consumer integration test is opt-in via CGW_FW_INSTALL_TESTS.
+# ============================================================
+set(CGW_FW_INSTALL_TEST_DIR "${CMAKE_CURRENT_SOURCE_DIR}/tests/install")
+
+add_test(NAME test_archive_arch
+        COMMAND bash "${CGW_FW_INSTALL_TEST_DIR}/test_archive_arch.sh"
+                "${CMAKE_BINARY_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}")
+set_tests_properties(test_archive_arch PROPERTIES
+        LABELS "cgw_install")
+
+add_test(NAME test_install_components
+        COMMAND bash "${CGW_FW_INSTALL_TEST_DIR}/test_install_components.sh"
+                "${CMAKE_BINARY_DIR}")
+set_tests_properties(test_install_components PROPERTIES
+        LABELS "cgw_install")
+
+add_test(NAME test_package_relocatable
+        COMMAND bash "${CGW_FW_INSTALL_TEST_DIR}/test_package_relocatable.sh"
+                "${CMAKE_BINARY_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}")
+set_tests_properties(test_package_relocatable PROPERTIES
+        LABELS "cgw_install")
+
+option(CGW_FW_INSTALL_TESTS
+        "Enable the heavy installed-consumer integration test (CR-006)" OFF)
+if(CGW_FW_INSTALL_TESTS)
+    add_test(NAME test_installed_consumer
+            COMMAND bash "${CGW_FW_INSTALL_TEST_DIR}/test_installed_consumer.sh"
+                    "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_BINARY_DIR}")
+    set_tests_properties(test_installed_consumer PROPERTIES
+            LABELS "cgw_install")
 endif()
