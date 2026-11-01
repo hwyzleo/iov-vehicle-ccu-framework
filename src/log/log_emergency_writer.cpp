@@ -2,7 +2,7 @@
 #include <unistd.h>
 #include <cstring>
 
-namespace cgw {
+namespace ccu {
 namespace fw {
 namespace log {
 
@@ -19,4 +19,4 @@ void EmergencyWriter::write(const std::string& msg) {
 
 } // namespace log
 } // namespace fw
-} // namespace cgw
+} // namespace ccu

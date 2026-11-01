@@ -1,7 +1,7 @@
 #include "log_sink_manager.h"
 #include <cstdio>
 
-namespace cgw {
+namespace ccu {
 namespace fw {
 namespace log {
 
@@ -66,4 +66,4 @@ void SinkManager::tryRecoverFileSink() {
 
 } // namespace log
 } // namespace fw
-} // namespace cgw
+} // namespace ccu

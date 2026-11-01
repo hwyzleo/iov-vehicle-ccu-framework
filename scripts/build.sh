@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# iov-vehicle-cgw-framework 构建脚本
+# iov-vehicle-ccu-framework 构建脚本
 #
 # 用法: ./scripts/build.sh [选项]
 #
@@ -8,15 +8,15 @@
 #   --clean          清理构建目录后重新构建
 #   --no-test        跳过测试步骤
 #   --install        构建后安装到 INSTALL_PREFIX
-#   --prefix <DIR>   安装前缀（默认取 scripts/cgw-env.sh 中的 CGW_PREFIX）
+#   --prefix <DIR>   安装前缀（默认取 scripts/ccu-env.sh 中的 CCU_PREFIX）
 #   --release        Release 模式构建（默认 Debug）
 #   --help           显示帮助信息
 #
-# 安装前缀的单一来源是 scripts/cgw-env.sh：
+# 安装前缀的单一来源是 scripts/ccu-env.sh：
 #   本地开发：  ./scripts/build.sh --install                 # -> ${HOME}/.local
-#   生产/CI：   CGW_PREFIX=/opt/cgw ./scripts/build.sh --install
+#   生产/CI：   CCU_PREFIX=/opt/ccu ./scripts/build.sh --install
 #
-# 注意：CGWFrameworkConfig.cmake 需要在 configure 阶段就知道前缀，
+# 注意：CCUFrameworkConfig.cmake 需要在 configure 阶段就知道前缀，
 #       因此前缀通过 -DCMAKE_INSTALL_PREFIX 传入，不能只在 install 阶段指定。
 #
 
@@ -33,17 +33,17 @@ NC='\033[0m' # No Color
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BUILD_DIR="${PROJECT_ROOT}/build"
 
-# 构建环境单一来源：提供 CGW_PREFIX / CGWFramework_DIR
-source "${PROJECT_ROOT}/scripts/cgw-env.sh"
+# 构建环境单一来源：提供 CCU_PREFIX / CCUFramework_DIR
+source "${PROJECT_ROOT}/scripts/ccu-env.sh"
 
 # 默认选项
 CLEAN_BUILD=false
 RUN_TESTS=true
 INSTALL_AFTER_BUILD=false
 BUILD_TYPE="Debug"
-# 安装前缀来自 cgw-env.sh（CGW_PREFIX），--prefix 可覆盖
-INSTALL_PREFIX="${CGW_PREFIX}"
-# 安装指定 component（空表示安装全部）。CGW-FW-DSN-CR-006 §4。
+# 安装前缀来自 ccu-env.sh（CCU_PREFIX），--prefix 可覆盖
+INSTALL_PREFIX="${CCU_PREFIX}"
+# 安装指定 component（空表示安装全部）。CCU-FW-DSN-CR-006 §4。
 INSTALL_COMPONENT=""
 
 # 显示帮助信息
@@ -54,9 +54,9 @@ show_help() {
     echo "  --clean          清理构建目录后重新构建"
     echo "  --no-test        跳过测试步骤"
     echo "  --install        构建后安装到 --prefix 指定的目录"
-    echo "  --prefix <DIR>   安装前缀（默认 ${CGW_PREFIX}，来自 scripts/cgw-env.sh）"
+    echo "  --prefix <DIR>   安装前缀（默认 ${CCU_PREFIX}，来自 scripts/ccu-env.sh）"
     echo "  --release        Release 模式构建（默认 Debug）"
-    echo "  --component <N>  仅安装指定 component（cgw-framework-sdk / cgw-framework-runtime）"
+    echo "  --component <N>  仅安装指定 component（ccu-framework-sdk / ccu-framework-runtime）"
     echo "  --help           显示帮助信息"
     echo ""
     echo "示例:"
@@ -64,8 +64,8 @@ show_help() {
     echo "  $0 --no-test                    # 仅构建，跳过测试"
     echo "  $0 --clean                      # 清理后重新构建"
     echo "  $0 --release                    # Release 模式构建"
-    echo "  $0 --clean --install            # 清理构建并安装到 ${CGW_PREFIX}"
-    echo "  CGW_PREFIX=/opt/cgw $0 --install  # 生产前缀（单一旋钮，无需改文件）"
+    echo "  $0 --clean --install            # 清理构建并安装到 ${CCU_PREFIX}"
+    echo "  CCU_PREFIX=/opt/ccu $0 --install  # 生产前缀（单一旋钮，无需改文件）"
 }
 
 # 打印带颜色的消息
@@ -207,10 +207,10 @@ configure_project() {
     print_info "配置 CMake 项目..."
     print_info "  构建类型: ${BUILD_TYPE}"
     print_info "  安装前缀: ${INSTALL_PREFIX}"
-    print_info "  依赖前缀: ${CGW_DEP_PREFIX_PATH}"
+    print_info "  依赖前缀: ${CCU_DEP_PREFIX_PATH}"
 
     # 确保受控 yaml-cpp TARGET 依赖已 staging（CR-006 §6）。
-    if [[ ! -f "${CGW_DEP_PREFIX_PATH}/lib/cmake/yaml-cpp/yaml-cppConfig.cmake" ]]; then
+    if [[ ! -f "${CCU_DEP_PREFIX_PATH}/lib/cmake/yaml-cpp/yaml-cppConfig.cmake" ]]; then
         print_info "staging 受控 yaml-cpp 依赖..."
         bash "${PROJECT_ROOT}/scripts/stage-yaml-cpp.sh"
     fi
@@ -219,12 +219,12 @@ configure_project() {
     cd "$BUILD_DIR"
 
     # CMAKE_INSTALL_PREFIX 必须在 configure 阶段给定：
-    # CGWFrameworkConfig.cmake 需要它来定位头文件。
+    # CCUFrameworkConfig.cmake 需要它来定位头文件。
     # CMAKE_PREFIX_PATH 指向受控依赖前缀，供 find_package(yaml-cpp) 解析。
     cmake .. \
         -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
         -DCMAKE_INSTALL_PREFIX="${INSTALL_PREFIX}" \
-        -DCMAKE_PREFIX_PATH="${CGW_DEP_PREFIX_PATH}" \
+        -DCMAKE_PREFIX_PATH="${CCU_DEP_PREFIX_PATH}" \
         -DBUILD_TESTS=$([ "$RUN_TESTS" = true ] && echo "ON" || echo "OFF")
 
     if [ $? -ne 0 ]; then
@@ -315,7 +315,7 @@ install_project() {
     fi
 
     print_success "安装完成"
-    print_info "消费方请使用: -DCMAKE_PREFIX_PATH=${INSTALL_PREFIX};${CGW_DEP_PREFIX_PATH}"
+    print_info "消费方请使用: -DCMAKE_PREFIX_PATH=${INSTALL_PREFIX};${CCU_DEP_PREFIX_PATH}"
     return 0
 }
 
@@ -330,17 +330,17 @@ show_summary() {
     echo "构建类型:   ${BUILD_TYPE}"
     echo ""
     echo "构建产物:"
-    echo "  - 静态库:    ${BUILD_DIR}/libcgw-framework-{config,log,store,hash,someip}.a"
+    echo "  - 静态库:    ${BUILD_DIR}/libccu-framework-{config,log,store,hash,someip}.a"
     if [ "$RUN_TESTS" = true ]; then
         echo "  - 测试程序:  ${BUILD_DIR}/tests/"
     fi
     echo ""
     if [ "$INSTALL_AFTER_BUILD" = true ]; then
         echo "安装位置:"
-        echo "  - 静态库:    ${INSTALL_PREFIX}/lib/libcgw-framework-*.a"
+        echo "  - 静态库:    ${INSTALL_PREFIX}/lib/libccu-framework-*.a"
         echo "  - 头文件:    ${INSTALL_PREFIX}/include/"
-        echo "  - CMake配置: ${INSTALL_PREFIX}/lib/cmake/CGWFramework/"
-        echo "  - pkg-config: ${INSTALL_PREFIX}/lib/pkgconfig/cgw-framework-*.pc"
+        echo "  - CMake配置: ${INSTALL_PREFIX}/lib/cmake/CCUFramework/"
+        echo "  - pkg-config: ${INSTALL_PREFIX}/lib/pkgconfig/ccu-framework-*.pc"
         if [[ -n "${INSTALL_COMPONENT}" ]]; then
             echo "  - component: ${INSTALL_COMPONENT}"
         fi
@@ -408,7 +408,7 @@ parse_args() {
 # 主函数
 main() {
     echo "=========================================="
-    echo "iov-vehicle-cgw-framework 构建脚本"
+    echo "iov-vehicle-ccu-framework 构建脚本"
     echo "=========================================="
     echo ""
 

@@ -2,7 +2,7 @@
 #include <algorithm>
 #include <cctype>
 
-namespace cgw {
+namespace ccu {
 namespace fw {
 namespace log {
 
@@ -97,4 +97,4 @@ std::string Redactor::hashValue(const std::string& value) const {
 
 } // namespace log
 } // namespace fw
-} // namespace cgw
+} // namespace ccu

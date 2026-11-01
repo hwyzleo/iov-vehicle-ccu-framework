@@ -10,7 +10,7 @@
 #include <system_error>
 #include <unistd.h>
 
-namespace cgw {
+namespace ccu {
 namespace fw {
 namespace store {
 
@@ -30,7 +30,7 @@ void fail(std::string_view code, std::string_view reason,
 
 void validateKey(const detail::StoreImpl& impl, std::string_view key) {
     if (!PathResolver::isValidKey(key)) {
-        fail("CGW-FW-0101", "invalid key", impl.service, key, "", "validate");
+        fail("CCU-FW-0101", "invalid key", impl.service, key, "", "validate");
     }
 }
 
@@ -38,7 +38,7 @@ void validateKey(const detail::StoreImpl& impl, std::string_view key) {
 
 Store Store::open(std::string_view service, const StoreOptions& options) {
     if (!PathResolver::isValidServiceName(service)) {
-        fail("CGW-FW-0101", "invalid service name", service, "", "", "validate");
+        fail("CCU-FW-0101", "invalid service name", service, "", "", "validate");
     }
     fs::path root = PathResolver::normalizeRoot(options.root);
     PathResolver::ensureServiceDir(root, service, service);
@@ -61,7 +61,7 @@ void saveBytes(StoreImpl& impl, std::string_view key,
                std::vector<uint8_t> bytes) {
     validateKey(impl, key);
     if (bytes.size() > impl.options.maxValueBytes) {
-        fail("CGW-FW-0104", "encoded value exceeds size limit", impl.service,
+        fail("CCU-FW-0104", "encoded value exceeds size limit", impl.service,
              key, "", "encode");
     }
     fs::path finalP = PathResolver::finalFile(impl.serviceDir, key);
@@ -97,7 +97,7 @@ bool hasBytes(const StoreImpl& impl, std::string_view key) {
         // Some platforms report "not found" as an error (ENOENT); treat that as
         // missing. Other errors are real I/O failures.
         if (ec == std::errc::no_such_file_or_directory) return false;
-        fail("CGW-FW-0102", std::string("cannot stat final file: ") + ec.message(),
+        fail("CCU-FW-0102", std::string("cannot stat final file: ") + ec.message(),
              impl.service, key, finalP.string(), "read");
     }
     if (st.type() == fs::file_type::not_found ||
@@ -105,7 +105,7 @@ bool hasBytes(const StoreImpl& impl, std::string_view key) {
         return false;
     }
     if (st.type() != fs::file_type::regular) {
-        fail("CGW-FW-0101", "final path is not a regular file", impl.service,
+        fail("CCU-FW-0101", "final path is not a regular file", impl.service,
              key, finalP.string(), "read");
     }
     return true;
@@ -122,7 +122,7 @@ bool removeBytes(StoreImpl& impl, std::string_view key) {
     auto st = fs::symlink_status(finalP, ec);
     if (ec) {
         if (ec == std::errc::no_such_file_or_directory) return false;
-        fail("CGW-FW-0102",
+        fail("CCU-FW-0102",
              std::string("cannot stat final file: ") + ec.message(),
              impl.service, key, finalP.string(), "remove");
     }
@@ -131,13 +131,13 @@ bool removeBytes(StoreImpl& impl, std::string_view key) {
         return false; // idempotent: nothing to remove
     }
     if (st.type() != fs::file_type::regular) {
-        fail("CGW-FW-0101",
+        fail("CCU-FW-0101",
              "refuse to remove non-regular/symlink final file", impl.service,
              key, finalP.string(), "remove");
     }
     if (::unlink(finalP.c_str()) != 0) {
         if (errno == ENOENT) return false; // raced removal
-        fail("CGW-FW-0102",
+        fail("CCU-FW-0102",
              std::string("unlink failed: ") + ::strerror(errno), impl.service,
              key, finalP.string(), "remove");
     }
@@ -175,4 +175,4 @@ bool isDirtyImpl(const StoreImpl& impl, std::string_view key) {
 
 } // namespace store
 } // namespace fw
-} // namespace cgw
+} // namespace ccu

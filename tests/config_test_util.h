@@ -5,7 +5,7 @@
 #include <string>
 #include <stdexcept>
 
-namespace cgwtest {
+namespace ccutest {
 
 namespace fs = std::filesystem;
 
@@ -15,7 +15,7 @@ struct TempDir {
 
     TempDir() {
         auto base = fs::temp_directory_path();
-        std::string name = "cgw-cfg-test-";
+        std::string name = "ccu-cfg-test-";
         for (int i = 0; i < 8; ++i) name.push_back('a' + (std::rand() % 26));
         path = base / name;
         fs::create_directories(path);
@@ -53,4 +53,4 @@ struct TempDir {
     }
 };
 
-} // namespace cgwtest
+} // namespace ccutest

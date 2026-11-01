@@ -5,7 +5,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-using namespace cgw::fw::log;
+using namespace ccu::fw::log;
 
 void test_logger_init_and_log() {
     LogConfig config = LogConfigAdapter::getDefaultConfig();

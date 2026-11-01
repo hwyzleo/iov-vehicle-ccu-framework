@@ -10,7 +10,7 @@
 #include <utility>
 #include <vector>
 
-namespace cgw {
+namespace ccu {
 namespace fw {
 namespace store {
 
@@ -57,4 +57,4 @@ private:
 
 } // namespace store
 } // namespace fw
-} // namespace cgw
+} // namespace ccu

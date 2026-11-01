@@ -1,7 +1,7 @@
 #include "config_merger.h"
 #include <algorithm>
 
-namespace cgw {
+namespace ccu {
 namespace fw {
 namespace config {
 
@@ -47,4 +47,4 @@ NodePtr Merger::mergeAll(const std::vector<std::pair<ConfigEntry, NodePtr>>& lay
 
 } // namespace config
 } // namespace fw
-} // namespace cgw
+} // namespace ccu

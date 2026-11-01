@@ -4,14 +4,14 @@
 #include <iostream>
 #include <vector>
 
-using namespace cgw::fw::log;
+using namespace ccu::fw::log;
 
 void test_basic_format() {
     std::vector<Field> fields = {
         {"schema_version", FieldValue::makeInt(1)},
         {"timestamp", FieldValue::makeString("2026-07-26T03:55:56.848Z")},
         {"level", FieldValue::makeString("INFO")},
-        {"service", FieldValue::makeString("cgw")},
+        {"service", FieldValue::makeString("ccu")},
         {"module", FieldValue::makeString("main")},
         {"message", FieldValue::makeString("主逻辑执行完成")}
     };
@@ -20,7 +20,7 @@ void test_basic_format() {
 
     // 验证格式：[时间] [服务] [级别] 消息
     assert(result.find("[2026-07-26") != std::string::npos);
-    assert(result.find("[cgw]") != std::string::npos);
+    assert(result.find("[ccu]") != std::string::npos);
     assert(result.find("[info]") != std::string::npos);
     assert(result.find("主逻辑执行完成") != std::string::npos);
 
@@ -32,7 +32,7 @@ void test_with_extra_fields() {
     std::vector<Field> fields = {
         {"timestamp", FieldValue::makeString("2026-07-26T03:55:56.848Z")},
         {"level", FieldValue::makeString("ERROR")},
-        {"service", FieldValue::makeString("cgw")},
+        {"service", FieldValue::makeString("ccu")},
         {"message", FieldValue::makeString("连接失败")},
         {"host", FieldValue::makeString("192.168.1.1")},
         {"port", FieldValue::makeInt(8080)}
@@ -52,7 +52,7 @@ void test_level_is_lowercase() {
     std::vector<Field> fields = {
         {"timestamp", FieldValue::makeString("2026-07-26T03:55:56.848Z")},
         {"level", FieldValue::makeString("WARN")},
-        {"service", FieldValue::makeString("cgw")},
+        {"service", FieldValue::makeString("ccu")},
         {"message", FieldValue::makeString("警告")}
     };
 
@@ -79,7 +79,7 @@ void test_empty_fields() {
 void test_missing_timestamp() {
     std::vector<Field> fields = {
         {"level", FieldValue::makeString("INFO")},
-        {"service", FieldValue::makeString("cgw")},
+        {"service", FieldValue::makeString("ccu")},
         {"message", FieldValue::makeString("test")}
     };
 

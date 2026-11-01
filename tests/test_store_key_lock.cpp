@@ -12,8 +12,8 @@
 #include <sys/wait.h>
 #include <fcntl.h>
 
-using namespace cgw::fw::store;
-using cgwtest::TempDir;
+using namespace ccu::fw::store;
+using ccutest::TempDir;
 namespace fs = std::filesystem;
 
 void test_acquire_release() {
@@ -43,7 +43,7 @@ void test_same_key_serialized() {
             // If acquired (shouldn't within timeout), release.
             h2.reset();
         } catch (const StoreException& e) {
-            threw = (e.code == "CGW-FW-0103");
+            threw = (e.code == "CCU-FW-0103");
         }
     });
     t.join();
@@ -91,7 +91,7 @@ void test_cross_process_flock() {
         auto h = mgr.acquire("k", "svc");
         h.reset();
     } catch (const StoreException& e) {
-        threw = (e.code == "CGW-FW-0103");
+        threw = (e.code == "CCU-FW-0103");
     }
     int status = 0;
     ::waitpid(pid, &status, 0);

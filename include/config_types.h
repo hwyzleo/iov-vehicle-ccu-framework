@@ -7,17 +7,17 @@
 #include <memory>
 #include <cstdint>
 
-namespace cgw {
+namespace ccu {
 namespace fw {
 namespace config {
 
 // ============================================================
-// ConfigException (CGW-FW-0001~0004)
+// ConfigException (CCU-FW-0001~0004)
 // ============================================================
-// code: CGW-FW-0001 (file missing/unreadable/read failed)
-//       CGW-FW-0002 (YAML syntax/parse error)
-//       CGW-FW-0003 (required key missing)
-//       CGW-FW-0004 (node type/enum/range illegal)
+// code: CCU-FW-0001 (file missing/unreadable/read failed)
+//       CCU-FW-0002 (YAML syntax/parse error)
+//       CCU-FW-0003 (required key missing)
+//       CCU-FW-0004 (node type/enum/range illegal)
 // path: normalized source file path (empty for non-file errors)
 // key:  offending config key or input name (e.g. "service", "configRoots")
 struct ConfigException : std::runtime_error {
@@ -75,8 +75,8 @@ template <> struct SnapshotGetter<std::vector<int64_t>> {
 
 class ConfigSnapshot {
 public:
-    // Typed read. Throws ConfigException(CGW-FW-0003) if key missing,
-    // (CGW-FW-0004) on type mismatch / unparseable value.
+    // Typed read. Throws ConfigException(CCU-FW-0003) if key missing,
+    // (CCU-FW-0004) on type mismatch / unparseable value.
     template <class T>
     T get(std::string_view key) const {
         return detail::SnapshotGetter<T>::get(*m_impl, key);
@@ -117,4 +117,4 @@ private:
 
 } // namespace config
 } // namespace fw
-} // namespace cgw
+} // namespace ccu

@@ -3,7 +3,7 @@
 
 #include <system_error>
 
-namespace cgw {
+namespace ccu {
 namespace fw {
 namespace store {
 
@@ -19,8 +19,8 @@ void fail101(std::string_view reason, std::string_view service,
              std::string_view key, std::string_view path,
              std::string_view stage) {
     throw StoreException(
-        "CGW-FW-0101",
-        StoreErrorFormatter::format("CGW-FW-0101", reason, service, key, path, stage),
+        "CCU-FW-0101",
+        StoreErrorFormatter::format("CCU-FW-0101", reason, service, key, path, stage),
         std::string(service), std::string(key), std::string(path), std::string(stage));
 }
 
@@ -133,4 +133,4 @@ void PathResolver::ensureServiceDir(const fs::path& root, std::string_view servi
 
 } // namespace store
 } // namespace fw
-} // namespace cgw
+} // namespace ccu

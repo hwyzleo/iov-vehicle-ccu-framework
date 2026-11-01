@@ -1,6 +1,6 @@
 #include "store_flush_policy.h"
 
-namespace cgw {
+namespace ccu {
 namespace fw {
 namespace store {
 
@@ -79,4 +79,4 @@ bool FlushPolicy::needsForcedFlush() const {
 
 } // namespace store
 } // namespace fw
-} // namespace cgw
+} // namespace ccu

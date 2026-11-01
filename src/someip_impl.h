@@ -2,14 +2,14 @@
 //
 // RuntimeImpl/ProviderImpl/ClientImpl are the PImpl types behind the public
 // SomeIpRuntime/Provider/Client facades. They share this header so each .cpp
-// can reference the others' complete type. Only cgw-framework-someip sources
+// can reference the others' complete type. Only ccu-framework-someip sources
 // and HOST tests include this file (CR-005 §3).
 #pragma once
 
-#include "cgw/fw/someip/client.hpp"
-#include "cgw/fw/someip/provider.hpp"
-#include "cgw/fw/someip/runtime.hpp"
-#include "cgw/fw/someip/types.hpp"
+#include "ccu/fw/someip/client.hpp"
+#include "ccu/fw/someip/provider.hpp"
+#include "ccu/fw/someip/runtime.hpp"
+#include "ccu/fw/someip/types.hpp"
 #include "someip_backend.h"
 
 #include <atomic>
@@ -25,7 +25,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace cgw::fw::someip {
+namespace ccu::fw::someip {
 namespace detail {
 
 // RAII subscription control block (CR-005 §7). canceler is set by ClientImpl;
@@ -40,7 +40,7 @@ struct SubscriptionState {
 // ============================================================
 // 0x0000 and 0xFFFF are reserved for Service/Instance/Method/Eventgroup.
 // Method IDs use 0x0001..0x7FFF; Event IDs use 0x8000..0xFFFE (SOME/IP event
-// range). Invalid IDs/config yield CGW-FW-0302; illegal payload yields 0306.
+// range). Invalid IDs/config yield CCU-FW-0302; illegal payload yields 0306.
 void validateServiceKey(ServiceKey key);
 void validateMethodId(MethodId id);
 void validateEventId(EventId id);
@@ -80,7 +80,7 @@ public:
     void unregisterClient();
 
     // Identity tracking: duplicate application identity before start yields
-    // CGW-FW-0302 (CR-005 §5). Each process has one Runtime; the registry is a
+    // CCU-FW-0302 (CR-005 §5). Each process has one Runtime; the registry is a
     // process-wide set guarded by a static mutex.
     static bool registerIdentity(const std::string& application);
     static void unregisterIdentity(const std::string& application);
@@ -220,4 +220,4 @@ private:
 };
 
 }  // namespace detail
-}  // namespace cgw::fw::someip
+}  // namespace ccu::fw::someip

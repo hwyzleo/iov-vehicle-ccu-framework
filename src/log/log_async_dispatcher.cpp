@@ -1,7 +1,7 @@
 #include "log_async_dispatcher.h"
 #include <chrono>
 
-namespace cgw {
+namespace ccu {
 namespace fw {
 namespace log {
 
@@ -111,4 +111,4 @@ bool AsyncDispatcher::isHighPriority(LogLevel level) const {
 
 } // namespace log
 } // namespace fw
-} // namespace cgw
+} // namespace ccu

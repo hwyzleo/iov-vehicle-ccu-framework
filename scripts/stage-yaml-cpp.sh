@@ -1,9 +1,9 @@
 #!/bin/bash
 #
 # stage-yaml-cpp.sh - 将 third_party 中的 HOST 预编译 yaml-cpp 受控 staging 为
-# 标准 CMake package 前缀（CGW-FW-DSN-CR-006 §6）。
+# 标准 CMake package 前缀（CCU-FW-DSN-CR-006 §6）。
 #
-# 产出布局（${CGW_DEP_STAGING}/usr）：
+# 产出布局（${CCU_DEP_STAGING}/usr）：
 #   include/yaml-cpp/**          公共头文件
 #   lib/libyaml-cpp.a            目标架构静态库
 #   lib/cmake/yaml-cpp/
@@ -17,8 +17,8 @@
 #   - 不再使用 if(EXISTS <arch-path>) 静默 fallback；缺失时 fail-closed。
 #
 # 用法:
-#   scripts/stage-yaml-cpp.sh                       # stage 到 ${CGW_DEP_STAGING}
-#   CGW_DEP_STAGING=/tmp/deps scripts/stage-yaml-cpp.sh
+#   scripts/stage-yaml-cpp.sh                       # stage 到 ${CCU_DEP_STAGING}
+#   CCU_DEP_STAGING=/tmp/deps scripts/stage-yaml-cpp.sh
 #
 set -euo pipefail
 
@@ -26,16 +26,16 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 # 构建环境单一来源
-source "${SCRIPT_DIR}/cgw-env.sh"
+source "${SCRIPT_DIR}/ccu-env.sh"
 
-: "${CGW_DEP_STAGING:?CGW_DEP_STAGING 未设置}"
+: "${CCU_DEP_STAGING:?CCU_DEP_STAGING 未设置}"
 
 # ---- 1. 探测 HOST 架构预编译制品路径 ----
 detect_arch_dir() {
     local proc="${CMAKE_SYSTEM_PROCESSOR:-$(uname -m)}"
     # 允许通过环境覆盖
-    if [[ -n "${CGW_FW_HOST_ARCH_DIR:-}" ]]; then
-        echo "${PROJECT_ROOT}/third_party/lib/${CGW_FW_HOST_ARCH_DIR}"
+    if [[ -n "${CCU_FW_HOST_ARCH_DIR:-}" ]]; then
+        echo "${PROJECT_ROOT}/third_party/lib/${CCU_FW_HOST_ARCH_DIR}"
         return
     fi
     case "$(uname -s)" in
@@ -71,7 +71,7 @@ if [[ ! -d "${HEADERS}" ]]; then
 fi
 
 # ---- 2. staging ----
-STAGING_USR="${CGW_DEP_STAGING}/usr"
+STAGING_USR="${CCU_DEP_STAGING}/usr"
 STAGING_INCLUDE="${STAGING_USR}/include"
 STAGING_LIB="${STAGING_USR}/lib"
 STAGING_CMAKE="${STAGING_LIB}/cmake/yaml-cpp"
@@ -115,7 +115,7 @@ set(yaml-cpp_FOUND TRUE)
 unset(_SELF_DIR)
 EOF
 
-# Minimal permissive version file (no version constraint is requested by CGW-FW).
+# Minimal permissive version file (no version constraint is requested by CCU-FW).
 cat > "${STAGING_CMAKE}/yaml-cppConfigVersion.cmake" <<'EOF'
 # yaml-cppConfigVersion.cmake - controlled staging (HOST).
 set(PACKAGE_VERSION "0.0.0-host")

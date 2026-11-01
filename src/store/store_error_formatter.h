@@ -3,12 +3,12 @@
 #include <string>
 #include <string_view>
 
-namespace cgw {
+namespace ccu {
 namespace fw {
 namespace store {
 
 // Builds minimal, non-sensitive error messages for diagnostics.
-// Output format: "CGW-FW-010X: <reason> [service=<svc> key=<key> path=<path> stage=<stage>]"
+// Output format: "CCU-FW-010X: <reason> [service=<svc> key=<key> path=<path> stage=<stage>]"
 // Empty fields are omitted. SHALL NOT include state contents, tokens, certs or keys.
 class StoreErrorFormatter {
 public:
@@ -22,4 +22,4 @@ public:
 
 } // namespace store
 } // namespace fw
-} // namespace cgw
+} // namespace ccu

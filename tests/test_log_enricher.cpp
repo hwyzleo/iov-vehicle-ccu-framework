@@ -4,7 +4,7 @@
 #include <iostream>
 #include <algorithm>
 
-using namespace cgw::fw::log;
+using namespace ccu::fw::log;
 
 static bool hasField(const std::vector<Field>& fields, const std::string& key) {
     return std::find_if(fields.begin(), fields.end(),

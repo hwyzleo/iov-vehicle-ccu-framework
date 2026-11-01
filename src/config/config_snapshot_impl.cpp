@@ -4,7 +4,7 @@
 #include <stdexcept>
 #include <cctype>
 
-namespace cgw {
+namespace ccu {
 namespace fw {
 namespace config {
 namespace detail {
@@ -43,17 +43,17 @@ bool parseBool(const std::string& s, bool& out) {
 
 void SnapshotImpl::throwMissing(std::string_view key) {
     throw ConfigException(
-        "CGW-FW-0003",
+        "CCU-FW-0003",
         ConfigErrorFormatter::format(
-            "CGW-FW-0003", "missing required config key", "", "", std::string(key)),
+            "CCU-FW-0003", "missing required config key", "", "", std::string(key)),
         "", std::string(key));
 }
 
 void SnapshotImpl::throwType(std::string_view key, const std::string& detail) {
     throw ConfigException(
-        "CGW-FW-0004",
+        "CCU-FW-0004",
         ConfigErrorFormatter::format(
-            "CGW-FW-0004", "config value type/range invalid: " + detail, "", "", std::string(key)),
+            "CCU-FW-0004", "config value type/range invalid: " + detail, "", "", std::string(key)),
         "", std::string(key));
 }
 
@@ -187,4 +187,4 @@ std::vector<std::string> snapshotKeys(const SnapshotImpl& i, std::string_view s)
 } // namespace detail
 } // namespace config
 } // namespace fw
-} // namespace cgw
+} // namespace ccu

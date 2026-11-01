@@ -7,7 +7,7 @@
 #include <algorithm>
 #include <climits>
 
-namespace cgw {
+namespace ccu {
 namespace fw {
 namespace log {
 
@@ -165,4 +165,4 @@ uint32_t RollingFileSink::countFiles() const {
 
 } // namespace log
 } // namespace fw
-} // namespace cgw
+} // namespace ccu

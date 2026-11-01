@@ -9,9 +9,9 @@
 #include <string>
 #include <thread>
 
-using namespace cgw::fw::someip;
-using cgwtest::makeTestConfig;
-using cgwtest::makeTestRuntime;
+using namespace ccu::fw::someip;
+using ccutest::makeTestConfig;
+using ccutest::makeTestRuntime;
 
 namespace {
 
@@ -25,7 +25,7 @@ void test_state_transitions() {
     h.runtime.stop();
     assert(h.runtime.state() == RuntimeState::Stopped);
     assert(!h.runtime.running());
-    CGW_PASS("test_state_transitions");
+    CCU_PASS("test_state_transitions");
 }
 
 void test_stop_idempotent() {
@@ -39,7 +39,7 @@ void test_stop_idempotent() {
     auto h2 = makeTestRuntime(makeTestConfig("rt-stop2"));
     h2.runtime.stop();
     assert(h2.runtime.state() == RuntimeState::Stopped);
-    CGW_PASS("test_stop_idempotent");
+    CCU_PASS("test_stop_idempotent");
 }
 
 void test_start_not_running_before_start() {
@@ -49,59 +49,59 @@ void test_start_not_running_before_start() {
     // is false and createClient then requestService rejects.
     assert(!h.runtime.running());
     auto c = h.runtime.createClient({0x1110, 0x0001}, {1, 0});
-    CGW_EXPECT_THROW_CODE(c.requestService(), "CGW-FW-0301");
-    CGW_PASS("test_start_not_running_before_start");
+    CCU_EXPECT_THROW_CODE(c.requestService(), "CCU-FW-0301");
+    CCU_PASS("test_start_not_running_before_start");
 }
 
 void test_duplicate_identity() {
     auto h = makeTestRuntime(makeTestConfig("rt-dup"));
     // A second runtime with the same application identity is rejected before
-    // start (CGW-FW-0302) (CR-005 §5).
-    CGW_EXPECT_THROW_CODE(makeTestRuntime(makeTestConfig("rt-dup")),
-                          "CGW-FW-0302");
+    // start (CCU-FW-0302) (CR-005 §5).
+    CCU_EXPECT_THROW_CODE(makeTestRuntime(makeTestConfig("rt-dup")),
+                          "CCU-FW-0302");
     // After the first is stopped/destroyed, the identity is released.
     h.runtime.start();
     h.runtime.stop();
-    CGW_PASS("test_duplicate_identity");
+    CCU_PASS("test_duplicate_identity");
 }
 
 void test_invalid_config() {
     SomeIpConfig cfg = makeTestConfig("rt-cfg");
     cfg.application = "";  // empty identity
-    CGW_EXPECT_THROW_CODE(makeTestRuntime(cfg), "CGW-FW-0302");
+    CCU_EXPECT_THROW_CODE(makeTestRuntime(cfg), "CCU-FW-0302");
 
     cfg = makeTestConfig("rt-cfg2");
     cfg.maxInflightCalls = 0;
-    CGW_EXPECT_THROW_CODE(makeTestRuntime(cfg), "CGW-FW-0302");
+    CCU_EXPECT_THROW_CODE(makeTestRuntime(cfg), "CCU-FW-0302");
 
     cfg = makeTestConfig("rt-cfg3");
     cfg.discovery.initialBackoff = std::chrono::milliseconds(1000);
     cfg.discovery.maxBackoff = std::chrono::milliseconds(100);  // max < initial
-    CGW_EXPECT_THROW_CODE(makeTestRuntime(cfg), "CGW-FW-0302");
+    CCU_EXPECT_THROW_CODE(makeTestRuntime(cfg), "CCU-FW-0302");
 
     cfg = makeTestConfig("rt-cfg4");
     cfg.discovery.multiplier = 0.5;
-    CGW_EXPECT_THROW_CODE(makeTestRuntime(cfg), "CGW-FW-0302");
+    CCU_EXPECT_THROW_CODE(makeTestRuntime(cfg), "CCU-FW-0302");
 
     cfg = makeTestConfig("rt-cfg5");
     cfg.callTimeout = std::chrono::milliseconds(0);
-    CGW_EXPECT_THROW_CODE(makeTestRuntime(cfg), "CGW-FW-0302");
-    CGW_PASS("test_invalid_config");
+    CCU_EXPECT_THROW_CODE(makeTestRuntime(cfg), "CCU-FW-0302");
+    CCU_PASS("test_invalid_config");
 }
 
 void test_invalid_service_key() {
     auto h = makeTestRuntime(makeTestConfig("rt-key"));
     h.runtime.start();
     // Reserved service id 0x0000 (CR-005 §4).
-    CGW_EXPECT_THROW_CODE(h.runtime.createProvider({0x0000, 0x0001}, {1, 0}),
-                          "CGW-FW-0302");
+    CCU_EXPECT_THROW_CODE(h.runtime.createProvider({0x0000, 0x0001}, {1, 0}),
+                          "CCU-FW-0302");
     // Reserved service id 0xFFFF.
-    CGW_EXPECT_THROW_CODE(h.runtime.createProvider({0xFFFF, 0x0001}, {1, 0}),
-                          "CGW-FW-0302");
+    CCU_EXPECT_THROW_CODE(h.runtime.createProvider({0xFFFF, 0x0001}, {1, 0}),
+                          "CCU-FW-0302");
     // Reserved instance 0xFFFF (wildcard).
-    CGW_EXPECT_THROW_CODE(h.runtime.createClient({0x1110, 0xFFFF}, {1, 0}),
-                          "CGW-FW-0302");
-    CGW_PASS("test_invalid_service_key");
+    CCU_EXPECT_THROW_CODE(h.runtime.createClient({0x1110, 0xFFFF}, {1, 0}),
+                          "CCU-FW-0302");
+    CCU_PASS("test_invalid_service_key");
 }
 
 void test_resource_limits() {
@@ -112,13 +112,13 @@ void test_resource_limits() {
     h.runtime.start();
     auto p1 = h.runtime.createProvider({0x1110, 0x0001}, {1, 0});
     auto p2 = h.runtime.createProvider({0x1111, 0x0001}, {1, 0});
-    // Third provider exceeds the limit (CGW-FW-0309).
-    CGW_EXPECT_THROW_CODE(h.runtime.createProvider({0x1112, 0x0001}, {1, 0}),
-                          "CGW-FW-0309");
+    // Third provider exceeds the limit (CCU-FW-0309).
+    CCU_EXPECT_THROW_CODE(h.runtime.createProvider({0x1112, 0x0001}, {1, 0}),
+                          "CCU-FW-0309");
     auto c1 = h.runtime.createClient({0x1110, 0x0001}, {1, 0});
-    CGW_EXPECT_THROW_CODE(h.runtime.createClient({0x1111, 0x0001}, {1, 0}),
-                          "CGW-FW-0309");
-    CGW_PASS("test_resource_limits");
+    CCU_EXPECT_THROW_CODE(h.runtime.createClient({0x1111, 0x0001}, {1, 0}),
+                          "CCU-FW-0309");
+    CCU_PASS("test_resource_limits");
 }
 
 void test_default_executor_used() {
@@ -142,7 +142,7 @@ void test_default_executor_used() {
     assert(r.success);
     assert(r.response.size() == 1 && r.response[0] == 0x42);
     h.runtime.stop();
-    CGW_PASS("test_default_executor_used");
+    CCU_PASS("test_default_executor_used");
 }
 
 }  // namespace

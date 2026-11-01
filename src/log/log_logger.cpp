@@ -12,7 +12,7 @@
 #include <vector>
 #include <cstdlib>
 
-namespace cgw {
+namespace ccu {
 namespace fw {
 namespace log {
 
@@ -247,4 +247,4 @@ void Logger::flush() {
 
 } // namespace log
 } // namespace fw
-} // namespace cgw
+} // namespace ccu

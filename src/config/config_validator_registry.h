@@ -8,7 +8,7 @@
 #include <string>
 #include <string_view>
 
-namespace cgw {
+namespace ccu {
 namespace fw {
 namespace config {
 
@@ -35,4 +35,4 @@ private:
 
 } // namespace config
 } // namespace fw
-} // namespace cgw
+} // namespace ccu

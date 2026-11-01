@@ -1,11 +1,11 @@
-// tests/someip_test_util.h - deterministic test helpers for cgw-framework-someip
+// tests/someip_test_util.h - deterministic test helpers for ccu-framework-someip
 // (CR-005 §14). InlineExecutor runs callbacks synchronously; DeferredExecutor
 // queues them for explicit drain (timeout tests). makeTestRuntime builds a
 // Runtime backed by a controllable FakeSomeIpBackend.
 #pragma once
 
-#include "cgw/fw/someip/runtime.hpp"
-#include "cgw/fw/someip/types.hpp"
+#include "ccu/fw/someip/runtime.hpp"
+#include "ccu/fw/someip/types.hpp"
 #include "someip_backend.h"
 #include "someip_impl.h"
 
@@ -14,8 +14,8 @@
 #include <string>
 #include <vector>
 
-namespace cgwtest {
-namespace someip = cgw::fw::someip;
+namespace ccutest {
+namespace someip = ccu::fw::someip;
 using someip::detail::FakeSomeIpBackend;
 using someip::detail::RuntimeImpl;
 
@@ -55,7 +55,7 @@ private:
 };
 
 // A minimal valid config for tests. jitterPercent=0 for deterministic backoff.
-inline someip::SomeIpConfig makeTestConfig(const std::string& app = "cgw-test") {
+inline someip::SomeIpConfig makeTestConfig(const std::string& app = "ccu-test") {
     someip::SomeIpConfig cfg;
     cfg.application = app;
     cfg.routingMode = someip::RoutingMode::External;
@@ -77,11 +77,11 @@ inline someip::SomeIpConfig makeTestConfig(const std::string& app = "cgw-test") 
 }
 
 // Build a Runtime backed by a controllable FakeSomeIpBackend. Defined in
-// cgw::fw::someip::detail so it matches the friend declarations granting access
+// ccu::fw::someip::detail so it matches the friend declarations granting access
 // to the private SomeIpRuntime/RuntimeImpl constructors (CR-005 §14).
-}  // namespace cgwtest
+}  // namespace ccutest
 
-namespace cgw::fw::someip::detail {
+namespace ccu::fw::someip::detail {
 
 struct TestRuntimeHandle {
     SomeIpRuntime runtime;
@@ -91,7 +91,7 @@ struct TestRuntimeHandle {
 inline TestRuntimeHandle makeTestRuntime(const SomeIpConfig& config,
                                          std::shared_ptr<Executor> executor = {},
                                          std::shared_ptr<DiagnosticsSink> diag = {}) {
-    if (!executor) executor = std::make_shared<cgwtest::InlineExecutor>();
+    if (!executor) executor = std::make_shared<ccutest::InlineExecutor>();
     auto backend = std::make_shared<FakeSomeIpBackend>(executor);
     // Use `new` (not std::make_shared) so the private RuntimeImpl constructor is
     // invoked directly within this friended function (make_shared would construct
@@ -100,19 +100,19 @@ inline TestRuntimeHandle makeTestRuntime(const SomeIpConfig& config,
     return TestRuntimeHandle{SomeIpRuntime(std::move(impl)), backend.get()};
 }
 
-}  // namespace cgw::fw::someip::detail
+}  // namespace ccu::fw::someip::detail
 
-namespace cgwtest {
-using cgw::fw::someip::detail::makeTestRuntime;
+namespace ccutest {
+using ccu::fw::someip::detail::makeTestRuntime;
 
 // Assert that `stmt` throws a SomeIpException with the given code. The parameter
 // is named `expected_code` (not `code`) to avoid colliding with the
 // SomeIpException::code member access inside the macro body.
-#define CGW_EXPECT_THROW_CODE(stmt, expected_code)                           \
+#define CCU_EXPECT_THROW_CODE(stmt, expected_code)                           \
     do {                                                                      \
         bool caught = false;                                                  \
         try { stmt; }                                                         \
-        catch (const cgw::fw::someip::SomeIpException& e) {                   \
+        catch (const ccu::fw::someip::SomeIpException& e) {                   \
             caught = (e.code == (expected_code));                             \
             if (!caught) {                                                    \
                 std::cerr << "  expected " << (expected_code) << " got " << e.code \
@@ -122,6 +122,6 @@ using cgw::fw::someip::detail::makeTestRuntime;
         assert(caught);                                                       \
     } while (0)
 
-#define CGW_PASS(name) std::cout << "  [PASS] " << (name) << std::endl
+#define CCU_PASS(name) std::cout << "  [PASS] " << (name) << std::endl
 
-}  // namespace cgwtest
+}  // namespace ccutest

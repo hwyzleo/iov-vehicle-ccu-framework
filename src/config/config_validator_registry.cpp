@@ -1,7 +1,7 @@
 #include "config_validator_registry.h"
 #include "config_common_log_validator.h"
 
-namespace cgw {
+namespace ccu {
 namespace fw {
 namespace config {
 
@@ -40,4 +40,4 @@ void ValidatorRegistry::validateAll(std::string_view service,
 
 } // namespace config
 } // namespace fw
-} // namespace cgw
+} // namespace ccu

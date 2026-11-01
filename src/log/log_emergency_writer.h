@@ -2,7 +2,7 @@
 
 #include <string>
 
-namespace cgw {
+namespace ccu {
 namespace fw {
 namespace log {
 
@@ -15,4 +15,4 @@ public:
 
 } // namespace log
 } // namespace fw
-} // namespace cgw
+} // namespace ccu

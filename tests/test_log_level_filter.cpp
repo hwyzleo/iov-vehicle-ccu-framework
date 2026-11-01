@@ -3,7 +3,7 @@
 #include <cassert>
 #include <iostream>
 
-using namespace cgw::fw::log;
+using namespace ccu::fw::log;
 
 void test_global_level_filter() {
     LogConfig config;

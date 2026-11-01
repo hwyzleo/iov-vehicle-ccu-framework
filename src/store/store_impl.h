@@ -9,7 +9,7 @@
 #include <memory>
 #include <string>
 
-namespace cgw {
+namespace ccu {
 namespace fw {
 namespace store {
 
@@ -32,4 +32,4 @@ struct StoreImpl {
 
 } // namespace store
 } // namespace fw
-} // namespace cgw
+} // namespace ccu

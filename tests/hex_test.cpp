@@ -1,12 +1,12 @@
 // tests/hex_test.cpp - Golden, round-trip, case, error and boundary tests for
-// the cgw-framework-hash byte<->Hex codec (CGW-FW-DSN-CR-007 §8).
+// the ccu-framework-hash byte<->Hex codec (CCU-FW-DSN-CR-007 §8).
 //
 // Covers §8.1 Golden, §8.2 round-trip + case, §8.3 error/boundary and a
 // §8.4 regression that sha256()/sha256_hex() remain unchanged. The codec is
 // pure and self-contained; no oracle is required.
 
-#include "cgw/fw/hash/hex.hpp"
-#include "cgw/fw/hash/sha256.hpp"  // ByteView + regression
+#include "ccu/fw/hash/hex.hpp"
+#include "ccu/fw/hash/sha256.hpp"  // ByteView + regression
 
 #include <cassert>
 #include <cstdint>
@@ -17,7 +17,7 @@
 #include <string_view>
 #include <vector>
 
-using namespace cgw::fw::hash;
+using namespace ccu::fw::hash;
 
 namespace {
 
@@ -157,7 +157,7 @@ void test_odd_length_throws_0410() {
             hexToBytes(std::string_view{s});
         } catch (const HexException& e) {
             threw = true;
-            assert(e.code() == "CGW-FW-0410");
+            assert(e.code() == "CCU-FW-0410");
             assert(e.position() == std::string_view::npos);
         }
         assert(threw);
@@ -181,7 +181,7 @@ void test_invalid_chars_throw_0411_with_position() {
             hexToBytes(std::string_view{c.hex});
         } catch (const HexException& e) {
             threw = true;
-            assert(e.code() == "CGW-FW-0411");
+            assert(e.code() == "CCU-FW-0411");
             assert(e.position() == c.pos);
         }
         assert(threw);
@@ -194,7 +194,7 @@ void test_invalid_chars_throw_0411_with_position() {
             hexToBytes(std::string_view{nl, 4});
         } catch (const HexException& e) {
             threw = true;
-            assert(e.code() == "CGW-FW-0411");
+            assert(e.code() == "CCU-FW-0411");
             assert(e.position() == 1);
         }
         assert(threw);
@@ -206,7 +206,7 @@ void test_invalid_chars_throw_0411_with_position() {
             hexToBytes(std::string_view{nul, 4});
         } catch (const HexException& e) {
             threw = true;
-            assert(e.code() == "CGW-FW-0411");
+            assert(e.code() == "CCU-FW-0411");
             assert(e.position() == 1);
         }
         assert(threw);
@@ -225,7 +225,7 @@ void test_no_partial_result_on_error() {
         assert(false && "expected HexException");
     } catch (const HexException& e) {
         threw = true;
-        assert(e.code() == "CGW-FW-0411");
+        assert(e.code() == "CCU-FW-0411");
     }
     assert(threw);
     std::cout << "  [PASS] test_no_partial_result_on_error" << std::endl;
@@ -243,7 +243,7 @@ void test_byteview_nullptr_nonzero_throws_0412() {
         bytesToHex(ByteView{nullptr, 1});
     } catch (const HexException& e) {
         threw = true;
-        assert(e.code() == "CGW-FW-0412");
+        assert(e.code() == "CCU-FW-0412");
         assert(e.position() == std::string_view::npos);
     }
     assert(threw);
@@ -262,7 +262,7 @@ void test_encode_length_overflow_throws_0412() {
         bytesToHex(ByteView{&dummy, huge});
     } catch (const HexException& e) {
         threw = true;
-        assert(e.code() == "CGW-FW-0412");
+        assert(e.code() == "CCU-FW-0412");
         assert(e.position() == std::string_view::npos);
     }
     assert(threw);

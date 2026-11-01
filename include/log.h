@@ -5,7 +5,7 @@
 #include <memory>
 #include <initializer_list>
 
-namespace cgw {
+namespace ccu {
 namespace fw {
 namespace log {
 
@@ -66,4 +66,4 @@ private:
 
 } // namespace log
 } // namespace fw
-} // namespace cgw
+} // namespace ccu

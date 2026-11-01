@@ -1,7 +1,7 @@
 #include "log_config_adapter.h"
 #include <yaml-cpp/yaml.h>
 
-namespace cgw {
+namespace ccu {
 namespace fw {
 namespace log {
 
@@ -66,7 +66,7 @@ std::pair<LogConfig, LogErrorInfo> LogConfigAdapter::loadFromYamlString(
             if (logNode["file"]) {
                 YAML::Node fileNode = logNode["file"];
                 if (fileNode["enabled"]) config.file_config.enabled = fileNode["enabled"].as<bool>(false);
-                if (fileNode["root"]) config.file_config.root = fileNode["root"].as<std::string>("/var/log/cgw");
+                if (fileNode["root"]) config.file_config.root = fileNode["root"].as<std::string>("/var/log/ccu");
                 if (fileNode["max_file_size_mb"]) config.file_config.max_file_size_mb = fileNode["max_file_size_mb"].as<uint32_t>(20);
                 if (fileNode["max_files"]) config.file_config.max_files = fileNode["max_files"].as<uint32_t>(5);
                 if (fileNode["total_budget_mb"]) config.file_config.total_budget_mb = fileNode["total_budget_mb"].as<uint32_t>(100);
@@ -159,4 +159,4 @@ LogLevel LogConfigAdapter::parseLevel(const std::string& str) {
 
 } // namespace log
 } // namespace fw
-} // namespace cgw
+} // namespace ccu

@@ -6,8 +6,8 @@
 #include <iostream>
 #include <unistd.h>
 
-using namespace cgw::fw::store;
-using cgwtest::TempDir;
+using namespace ccu::fw::store;
+using ccutest::TempDir;
 namespace fs = std::filesystem;
 
 static bool isRoot() { return ::geteuid() == 0; }
@@ -54,26 +54,26 @@ void test_key_invalid() {
 }
 
 void test_normalize_root() {
-    assert(PathResolver::normalizeRoot("/var/lib/cgw") == "/var/lib/cgw");
-    assert(PathResolver::normalizeRoot("/var/lib/cgw/") == "/var/lib/cgw");
-    assert(PathResolver::normalizeRoot("/var/lib/cgw/../cgw") == "/var/lib/cgw");
+    assert(PathResolver::normalizeRoot("/var/lib/ccu") == "/var/lib/ccu");
+    assert(PathResolver::normalizeRoot("/var/lib/ccu/") == "/var/lib/ccu");
+    assert(PathResolver::normalizeRoot("/var/lib/ccu/../ccu") == "/var/lib/ccu");
     bool threw = false;
     try { PathResolver::normalizeRoot(""); } catch (const StoreException& e) {
-        threw = true; assert(e.code == "CGW-FW-0101");
+        threw = true; assert(e.code == "CCU-FW-0101");
     }
     assert(threw);
     std::cout << "  [PASS] test_normalize_root" << std::endl;
 }
 
 void test_path_resolution() {
-    fs::path root = "/var/lib/cgw";
-    assert(PathResolver::serviceDir(root, "diag") == "/var/lib/cgw/diag");
-    assert(PathResolver::finalFile("/var/lib/cgw/diag", "counter") ==
-           "/var/lib/cgw/diag/counter.dat");
-    assert(PathResolver::finalFile("/var/lib/cgw/diag", "snap.seq") ==
-           "/var/lib/cgw/diag/snap.seq.dat");
-    assert(PathResolver::lockFile("/var/lib/cgw/diag", "counter") ==
-           "/var/lib/cgw/diag/.counter.lock");
+    fs::path root = "/var/lib/ccu";
+    assert(PathResolver::serviceDir(root, "diag") == "/var/lib/ccu/diag");
+    assert(PathResolver::finalFile("/var/lib/ccu/diag", "counter") ==
+           "/var/lib/ccu/diag/counter.dat");
+    assert(PathResolver::finalFile("/var/lib/ccu/diag", "snap.seq") ==
+           "/var/lib/ccu/diag/snap.seq.dat");
+    assert(PathResolver::lockFile("/var/lib/ccu/diag", "counter") ==
+           "/var/lib/ccu/diag/.counter.lock");
     std::cout << "  [PASS] test_path_resolution" << std::endl;
 }
 
@@ -102,7 +102,7 @@ void test_ensure_service_dir_rejects_symlink() {
         PathResolver::ensureServiceDir(root, "diag", "diag");
     } catch (const StoreException& e) {
         threw = true;
-        assert(e.code == "CGW-FW-0101");
+        assert(e.code == "CCU-FW-0101");
     }
     assert(threw);
     std::cout << "  [PASS] test_ensure_service_dir_rejects_symlink" << std::endl;
@@ -124,7 +124,7 @@ void test_ensure_service_dir_readonly_root_fails() {
         PathResolver::ensureServiceDir(root, "diag", "diag");
     } catch (const StoreException& e) {
         threw = true;
-        assert(e.code == "CGW-FW-0101");
+        assert(e.code == "CCU-FW-0101");
     }
     assert(threw);
     // restore for cleanup

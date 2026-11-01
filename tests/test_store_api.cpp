@@ -6,8 +6,8 @@
 #include <fstream>
 #include <iostream>
 
-using namespace cgw::fw::store;
-using cgwtest::TempDir;
+using namespace ccu::fw::store;
+using ccutest::TempDir;
 namespace fs = std::filesystem;
 
 static Store openStore(const fs::path& root, FlushMode mode = FlushMode::Synchronous) {
@@ -20,14 +20,14 @@ static Store openStore(const fs::path& root, FlushMode mode = FlushMode::Synchro
 void test_save_load_roundtrip() {
     TempDir tmp;
     Store s = openStore(tmp.path);
-    s.save<std::string>("name", "cgw-diag");
+    s.save<std::string>("name", "ccu-diag");
     s.save<int64_t>("counter", 42);
     s.save<double>("ratio", 1.25);
     s.save<bool>("flag", true);
     s.save<std::vector<std::string>>("tags", {"a", "b"});
     s.save<std::vector<int64_t>>("ids", {1, 2, 3});
 
-    assert(s.load<std::string>("name") == "cgw-diag");
+    assert(s.load<std::string>("name") == "ccu-diag");
     assert(s.load<int64_t>("counter") == 42);
     assert(s.load<double>("ratio") == 1.25);
     assert(s.load<bool>("flag") == true);
@@ -44,7 +44,7 @@ void test_load_missing_throws_0105() {
         s.load<int64_t>("nope");
     } catch (const StoreException& e) {
         threw = true;
-        assert(e.code == "CGW-FW-0105");
+        assert(e.code == "CCU-FW-0105");
     }
     assert(threw);
     std::cout << "  [PASS] test_load_missing_throws_0105" << std::endl;
@@ -73,7 +73,7 @@ void test_loadOr_does_not_swallow_0104() {
         s.loadOr<int64_t>("k", 99);
     } catch (const StoreException& e) {
         threw = true;
-        assert(e.code == "CGW-FW-0104");
+        assert(e.code == "CCU-FW-0104");
     }
     assert(threw);
     std::cout << "  [PASS] test_loadOr_does_not_swallow_0104" << std::endl;
@@ -115,7 +115,7 @@ void test_invalid_key_throws_0101() {
     for (std::string bad : {"", ".", "..", "a/b", "a\\b", "a..b", ".a", "a."}) {
         bool threw = false;
         try { s.save<int64_t>(bad, 1); } catch (const StoreException& e) {
-            threw = true; assert(e.code == "CGW-FW-0101");
+            threw = true; assert(e.code == "CCU-FW-0101");
         }
         assert(threw);
     }

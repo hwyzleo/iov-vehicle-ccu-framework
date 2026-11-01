@@ -1,6 +1,6 @@
 #include "log_level_filter.h"
 
-namespace cgw {
+namespace ccu {
 namespace fw {
 namespace log {
 
@@ -28,4 +28,4 @@ void LevelFilter::setModuleLevel(const std::string& module, LogLevel level) {
 
 } // namespace log
 } // namespace fw
-} // namespace cgw
+} // namespace ccu

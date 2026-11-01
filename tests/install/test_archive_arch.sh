@@ -16,11 +16,11 @@ BUILD_DIR="$(cd "${BUILD_DIR}" && pwd)"
 SRC_DIR="$(cd "${SRC_DIR}" && pwd)"
 
 ARCHIVES=(
-    "${BUILD_DIR}/libcgw-framework-config.a"
-    "${BUILD_DIR}/libcgw-framework-log.a"
-    "${BUILD_DIR}/libcgw-framework-store.a"
-    "${BUILD_DIR}/libcgw-framework-hash.a"
-    "${BUILD_DIR}/libcgw-framework-someip.a"
+    "${BUILD_DIR}/libccu-framework-config.a"
+    "${BUILD_DIR}/libccu-framework-log.a"
+    "${BUILD_DIR}/libccu-framework-store.a"
+    "${BUILD_DIR}/libccu-framework-hash.a"
+    "${BUILD_DIR}/libccu-framework-someip.a"
 )
 
 # Expected member architecture token derived from the host platform.

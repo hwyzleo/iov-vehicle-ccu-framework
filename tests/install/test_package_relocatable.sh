@@ -20,9 +20,9 @@ TMP="$(mktemp -d)"
 trap 'rm -rf "${TMP}"' EXIT
 
 SDK_PREFIX="${TMP}/sdk"
-cmake --install "${BUILD_DIR}" --component cgw-framework-sdk --prefix "${SDK_PREFIX}" >/dev/null
+cmake --install "${BUILD_DIR}" --component ccu-framework-sdk --prefix "${SDK_PREFIX}" >/dev/null
 
-CMAKE_DIR="${SDK_PREFIX}/lib/cmake/CGWFramework"
+CMAKE_DIR="${SDK_PREFIX}/lib/cmake/CCUFramework"
 if [[ ! -d "${CMAKE_DIR}" ]]; then
     echo "test_package_relocatable: FAIL missing ${CMAKE_DIR}"; exit 1
 fi
@@ -39,10 +39,10 @@ FORBIDDEN=(
 
 fail=0
 shopt -s nullglob
-files=( "${CMAKE_DIR}"/CGWFrameworkConfig.cmake
-        "${CMAKE_DIR}"/CGWFrameworkConfigVersion.cmake
-        "${CMAKE_DIR}"/CGWFrameworkTargets.cmake
-        "${CMAKE_DIR}"/CGWFrameworkTargets-*.cmake )
+files=( "${CMAKE_DIR}"/CCUFrameworkConfig.cmake
+        "${CMAKE_DIR}"/CCUFrameworkConfigVersion.cmake
+        "${CMAKE_DIR}"/CCUFrameworkTargets.cmake
+        "${CMAKE_DIR}"/CCUFrameworkTargets-*.cmake )
 shopt -u nullglob
 
 if [[ ${#files[@]} -eq 0 ]]; then
@@ -61,7 +61,7 @@ done
 
 # Relocatability: the Config must derive its prefix from its own location
 # (@PACKAGE_INIT@ -> PACKAGE_PREFIX_DIR), not bake an absolute prefix.
-config="${CMAKE_DIR}/CGWFrameworkConfig.cmake"
+config="${CMAKE_DIR}/CCUFrameworkConfig.cmake"
 if ! grep -F -q 'PACKAGE_PREFIX_DIR' "${config}" 2>/dev/null \
    && ! grep -F -q 'get_filename_component' "${config}" 2>/dev/null; then
     echo "test_package_relocatable: FAIL Config is not relocatable (no PACKAGE_PREFIX_DIR derivation)"

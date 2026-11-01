@@ -1,4 +1,4 @@
-// cgw-framework-someip - Client public API (CR-005 §7/§8).
+// ccu-framework-someip - Client public API (CR-005 §7/§8).
 //
 // A Client requests a Service+Instance, observes Availability, performs
 // synchronous/asynchronous Method calls and subscribes to Events. Responses are
@@ -10,12 +10,12 @@
 // (CR-005 §7/§8). Callbacks run on the Executor outside internal locks.
 #pragma once
 
-#include "cgw/fw/someip/types.hpp"
+#include "ccu/fw/someip/types.hpp"
 
 #include <functional>
 #include <memory>
 
-namespace cgw::fw::someip {
+namespace ccu::fw::someip {
 
 class SomeIpRuntime;  // friend: constructs Client instances
 
@@ -40,7 +40,7 @@ public:
     Subscription onAvailability(AvailabilityCallback callback);
 
     // Synchronous call. Checks Runtime running and Availability first; returns
-    // CGW-FW-0304 when unavailable/version-mismatched, CGW-FW-0305 on
+    // CCU-FW-0304 when unavailable/version-mismatched, CCU-FW-0305 on
     // timeout/cancel/transport failure (CR-005 §7/§12).
     CallResult call(MethodId id, PayloadView payload, const CallOptions& options = {});
 
@@ -59,4 +59,4 @@ private:
         : m_impl(std::move(impl)) {}
 };
 
-}  // namespace cgw::fw::someip
+}  // namespace ccu::fw::someip

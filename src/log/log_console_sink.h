@@ -3,7 +3,7 @@
 #include "log_types.h"
 #include <string>
 
-namespace cgw {
+namespace ccu {
 namespace fw {
 namespace log {
 
@@ -25,4 +25,4 @@ private:
 
 } // namespace log
 } // namespace fw
-} // namespace cgw
+} // namespace ccu

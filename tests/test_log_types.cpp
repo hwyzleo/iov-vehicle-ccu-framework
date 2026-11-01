@@ -3,7 +3,7 @@
 #include <iostream>
 #include <cstring>
 
-using namespace cgw::fw::log;
+using namespace ccu::fw::log;
 
 void test_log_level_from_string() {
     assert(logLevelFromString("TRACE") == LogLevel::kTrace);
@@ -56,7 +56,7 @@ void test_default_config() {
     assert(config.async_config.queue_size == 4096);
     assert(config.console_config.enabled == true);
     assert(config.file_config.enabled == false);
-    assert(config.file_config.root == "/var/log/cgw");
+    assert(config.file_config.root == "/var/log/ccu");
     assert(config.redact_config.identifiers == "mask");
     assert(config.redact_config.raw_payload_max_bytes == 256);
     std::cout << "  [PASS] test_default_config" << std::endl;

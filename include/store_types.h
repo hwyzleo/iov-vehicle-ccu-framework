@@ -9,7 +9,7 @@
 #include <string_view>
 #include <vector>
 
-namespace cgw {
+namespace ccu {
 namespace fw {
 namespace store {
 
@@ -34,7 +34,7 @@ enum class FlushMode {
 // StoreOptions
 // ============================================================
 struct StoreOptions {
-    std::filesystem::path root{"/var/lib/cgw"};
+    std::filesystem::path root{"/var/lib/ccu"};
     std::chrono::milliseconds lockTimeout{3000};
     std::size_t maxValueBytes{4 * 1024 * 1024};
     FlushMode flushMode{FlushMode::Synchronous};
@@ -47,13 +47,13 @@ struct StoreOptions {
 };
 
 // ============================================================
-// StoreException (CGW-FW-0101~0105)
+// StoreException (CCU-FW-0101~0105)
 // ============================================================
-// code: CGW-FW-0101 root/dir/permission/path-safety check failed (fail-closed)
-//       CGW-FW-0102 create/write/fsync/rename/unlink/dir-sync failed
-//       CGW-FW-0103 in-process/cross-process lock failed or timed out
-//       CGW-FW-0104 encode/decode/format-version/size illegal
-//       CGW-FW-0105 final file missing
+// code: CCU-FW-0101 root/dir/permission/path-safety check failed (fail-closed)
+//       CCU-FW-0102 create/write/fsync/rename/unlink/dir-sync failed
+//       CCU-FW-0103 in-process/cross-process lock failed or timed out
+//       CCU-FW-0104 encode/decode/format-version/size illegal
+//       CCU-FW-0105 final file missing
 // stage: logical step (e.g. "validate", "encode", "lock", "temp-create",
 //        "write", "fsync", "rename", "dir-fsync", "read", "decode", "remove")
 // path/service/key carry a minimal path summary; SHALL NOT contain state
@@ -82,7 +82,7 @@ struct StoreException : std::runtime_error {
 // Public header exposes only typed entry points; the on-disk framing (magic,
 // format version, type tag, byte order, length prefixes) is an implementation
 // detail in the .cpp. load<T> verifies the stored type tag matches T, so a
-// type mismatch yields CGW-FW-0104 rather than a corrupted object. Unserved T
+// type mismatch yields CCU-FW-0104 rather than a corrupted object. Unserved T
 // (no SerializerDispatch specialization) yields a compile error, preventing
 // raw memory dumps of unknown ABI objects.
 namespace detail {
@@ -144,4 +144,4 @@ bool isDirtyImpl(const StoreImpl& impl, std::string_view key);
 
 } // namespace store
 } // namespace fw
-} // namespace cgw
+} // namespace ccu

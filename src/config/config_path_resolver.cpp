@@ -3,7 +3,7 @@
 #include <system_error>
 #include <set>
 
-namespace cgw {
+namespace ccu {
 namespace fw {
 namespace config {
 
@@ -29,9 +29,9 @@ bool isRegularFile(const fs::path& p) {
 void requireRegular(const fs::path& p, std::string_view source) {
     if (!isRegularFile(p)) {
         throw ConfigException(
-            "CGW-FW-0001",
+            "CCU-FW-0001",
             ConfigErrorFormatter::format(
-                "CGW-FW-0001",
+                "CCU-FW-0001",
                 "config candidate exists but is not a regular file",
                 p.string(), std::string(source), ""),
             p.string(), "");
@@ -52,9 +52,9 @@ bool PathResolver::isValidServiceName(std::string_view service) {
 fs::path PathResolver::normalizeRoot(const fs::path& root) {
     if (root.empty()) {
         throw ConfigException(
-            "CGW-FW-0004",
+            "CCU-FW-0004",
             ConfigErrorFormatter::format(
-                "CGW-FW-0004", "empty config root", "", "", "configRoots"),
+                "CCU-FW-0004", "empty config root", "", "", "configRoots"),
             "", "configRoots");
     }
     fs::path p = root.lexically_normal();
@@ -65,9 +65,9 @@ fs::path PathResolver::normalizeRoot(const fs::path& root) {
     }
     if (p.empty()) {
         throw ConfigException(
-            "CGW-FW-0004",
+            "CCU-FW-0004",
             ConfigErrorFormatter::format(
-                "CGW-FW-0004", "illegal config root: " + root.string(), "", "", "configRoots"),
+                "CCU-FW-0004", "illegal config root: " + root.string(), "", "", "configRoots"),
             "", "configRoots");
     }
     return p;
@@ -88,9 +88,9 @@ std::vector<fs::path> PathResolver::normalizeRoots(const std::vector<fs::path>& 
 fs::path PathResolver::normalizeCwd(const fs::path& cwd) {
     if (cwd.empty()) {
         throw ConfigException(
-            "CGW-FW-0004",
+            "CCU-FW-0004",
             ConfigErrorFormatter::format(
-                "CGW-FW-0004", "empty cwd", "", "", "cwd"),
+                "CCU-FW-0004", "empty cwd", "", "", "cwd"),
             "", "cwd");
     }
     return cwd.lexically_normal();
@@ -120,9 +120,9 @@ std::vector<ConfigEntry> PathResolver::resolveAll(
         }
         if (!found) {
             throw ConfigException(
-                "CGW-FW-0001",
+                "CCU-FW-0001",
                 ConfigErrorFormatter::format(
-                    "CGW-FW-0001",
+                    "CCU-FW-0001",
                     "required common.yaml not found in any config root",
                     "", "common", ""),
                 "", "common.yaml");
@@ -190,4 +190,4 @@ std::vector<ConfigEntry> PathResolver::resolveAll(
 
 } // namespace config
 } // namespace fw
-} // namespace cgw
+} // namespace ccu

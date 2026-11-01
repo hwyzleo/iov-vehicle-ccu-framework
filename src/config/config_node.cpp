@@ -1,6 +1,6 @@
 #include "config_node.h"
 
-namespace cgw {
+namespace ccu {
 namespace fw {
 namespace config {
 
@@ -37,4 +37,4 @@ const ConfigNode* ConfigNode::find(std::string_view key) const {
 
 } // namespace config
 } // namespace fw
-} // namespace cgw
+} // namespace ccu

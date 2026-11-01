@@ -5,7 +5,7 @@
 #include <string>
 #include <unordered_set>
 
-namespace cgw {
+namespace ccu {
 namespace fw {
 namespace log {
 
@@ -28,4 +28,4 @@ private:
 
 } // namespace log
 } // namespace fw
-} // namespace cgw
+} // namespace ccu

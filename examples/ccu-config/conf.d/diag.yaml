@@ -1,4 +1,4 @@
-# /etc/cgw/conf.d/diag.yaml - CGW-DIAG service configuration
+# /etc/ccu/conf.d/diag.yaml - CCU-DIAG service configuration
 diag:
   log:
     level: INFO

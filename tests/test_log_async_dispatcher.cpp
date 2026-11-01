@@ -6,7 +6,7 @@
 #include <string>
 #include <atomic>
 
-using namespace cgw::fw::log;
+using namespace ccu::fw::log;
 
 void test_async_basic_submit() {
     std::vector<std::string> written;

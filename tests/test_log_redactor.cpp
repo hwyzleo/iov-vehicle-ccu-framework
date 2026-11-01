@@ -4,7 +4,7 @@
 #include <iostream>
 #include <algorithm>
 
-using namespace cgw::fw::log;
+using namespace ccu::fw::log;
 
 static const Field* findField(const std::vector<Field>& fields, const std::string& key) {
     auto it = std::find_if(fields.begin(), fields.end(),

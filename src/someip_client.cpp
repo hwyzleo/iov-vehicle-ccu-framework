@@ -6,7 +6,7 @@
 #include <cmath>
 #include <utility>
 
-namespace cgw::fw::someip {
+namespace ccu::fw::someip {
 namespace detail {
 
 namespace {
@@ -34,7 +34,7 @@ std::chrono::milliseconds computeBackoff(int attempt,
 
 }  // namespace
 
-// Subscription is in cgw::fw::someip (not detail); close detail temporarily so
+// Subscription is in ccu::fw::someip (not detail); close detail temporarily so
 // the member definitions resolve to the correct class.
 }  // namespace detail
 
@@ -102,19 +102,19 @@ ClientImpl::~ClientImpl() {
             try { m_runtime->backend().unsubscribe(id); } catch (...) {}
         }
     } catch (...) {
-        // Best-effort cleanup (CGW-FW-0310); never throw from destructor.
+        // Best-effort cleanup (CCU-FW-0310); never throw from destructor.
     }
     if (m_runtime) m_runtime->unregisterClient();
 }
 
 void ClientImpl::requestService() {
     if (!m_runtime->running()) {
-        throw SomeIpException("CGW-FW-0301", "requestService: runtime not running");
+        throw SomeIpException("CCU-FW-0301", "requestService: runtime not running");
     }
     {
         std::lock_guard<std::mutex> lk(m_mutex);
         if (m_serviceRequested) {
-            throw SomeIpException("CGW-FW-0302", "requestService: already requested");
+            throw SomeIpException("CCU-FW-0302", "requestService: already requested");
         }
         m_serviceRequested = true;
         m_recoveryAttempt = 0;
@@ -182,13 +182,13 @@ CallResult ClientImpl::call(MethodId id, PayloadView payload,
                             const CallOptions& options) {
     validateMethodId(id);
     if (!m_runtime->running()) {
-        throw SomeIpException("CGW-FW-0301", "call: runtime not running");
+        throw SomeIpException("CCU-FW-0301", "call: runtime not running");
     }
     validatePayload(payload, m_runtime->config().maxPayloadBytes);
     {
         std::lock_guard<std::mutex> lk(m_mutex);
         if (m_availability != Availability::Available) {
-            return CallResult::fail("CGW-FW-0304",
+            return CallResult::fail("CCU-FW-0304",
                                     "call: service unavailable or version mismatch");
         }
     }
@@ -199,7 +199,7 @@ Future<CallResult> ClientImpl::callAsync(MethodId id, Payload payload,
                                          const CallOptions& options) {
     validateMethodId(id);
     if (!m_runtime->running()) {
-        throw SomeIpException("CGW-FW-0301", "callAsync: runtime not running");
+        throw SomeIpException("CCU-FW-0301", "callAsync: runtime not running");
     }
     validatePayload(PayloadView{payload.data(), payload.size()},
                     m_runtime->config().maxPayloadBytes);
@@ -208,7 +208,7 @@ Future<CallResult> ClientImpl::callAsync(MethodId id, Payload payload,
         if (m_availability != Availability::Available) {
             std::promise<CallResult> p;
             p.set_value(CallResult::fail(
-                "CGW-FW-0304", "callAsync: service unavailable or version mismatch"));
+                "CCU-FW-0304", "callAsync: service unavailable or version mismatch"));
             return p.get_future();
         }
     }
@@ -258,7 +258,7 @@ CallResult ClientImpl::doSyncCall(MethodId id, PayloadView payload,
         std::lock_guard<std::mutex> lk(m_mutex);
         m_inFlight.erase(entry->session);
     }
-    return CallResult::fail("CGW-FW-0305", "call timeout");
+    return CallResult::fail("CCU-FW-0305", "call timeout");
 }
 
 void ClientImpl::sendCallRequest(std::shared_ptr<InFlight> entry) {
@@ -270,7 +270,7 @@ void ClientImpl::sendCallRequest(std::shared_ptr<InFlight> entry) {
             // First send for this entry: enforce the in-flight limit (0309).
             if (m_inFlight.size() >= m_runtime->config().maxInflightCalls) {
                 entry->session = 0;
-                throw SomeIpException("CGW-FW-0309",
+                throw SomeIpException("CCU-FW-0309",
                                       "call: in-flight limit exhausted");
             }
         } else {
@@ -293,7 +293,7 @@ void ClientImpl::onResponse(std::shared_ptr<InFlight> entry, CallResult result) 
     }
     // Retry only on transport failure for explicit idempotent calls (US-507).
     // Bounded by maxRetries; same trace semantics preserved (CR-005 §7).
-    if (!result.success && result.code == "CGW-FW-0305" &&
+    if (!result.success && result.code == "CCU-FW-0305" &&
         entry->retry == RetryMode::Idempotent &&
         entry->attempt < entry->maxRetries) {
         entry->attempt++;
@@ -303,7 +303,7 @@ void ClientImpl::onResponse(std::shared_ptr<InFlight> entry, CallResult result) 
         ev.method = entry->method;
         ev.session = entry->session;
         ev.retryAttempt = static_cast<int>(entry->attempt);
-        ev.code = "CGW-FW-0305";
+        ev.code = "CCU-FW-0305";
         m_runtime->report(ev);
         sendCallRequest(entry);  // resend with a new session, same trace
         return;
@@ -332,7 +332,7 @@ void ClientImpl::onTimeout(std::shared_ptr<InFlight> entry) {
         std::lock_guard<std::mutex> lk(m_mutex);
         m_inFlight.erase(entry->session);
     }
-    entry->promise->set_value(CallResult::fail("CGW-FW-0305", "call timeout"));
+    entry->promise->set_value(CallResult::fail("CCU-FW-0305", "call timeout"));
 }
 
 Subscription ClientImpl::subscribe(EventgroupId group, EventId event,
@@ -340,12 +340,12 @@ Subscription ClientImpl::subscribe(EventgroupId group, EventId event,
     validateEventgroupId(group);
     validateEventId(event);
     if (!m_runtime->running()) {
-        throw SomeIpException("CGW-FW-0301", "subscribe: runtime not running");
+        throw SomeIpException("CCU-FW-0301", "subscribe: runtime not running");
     }
     {
         std::lock_guard<std::mutex> lk(m_mutex);
         if (m_subscriptions.size() >= m_runtime->config().maxSubscriptionsPerClient) {
-            throw SomeIpException("CGW-FW-0309",
+            throw SomeIpException("CCU-FW-0309",
                                   "subscribe: subscription limit exhausted");
         }
     }
@@ -557,4 +557,4 @@ Subscription Client::subscribe(EventgroupId group, EventId event, EventCallback 
     return m_impl->subscribe(group, event, std::move(callback));
 }
 
-}  // namespace cgw::fw::someip
+}  // namespace ccu::fw::someip

@@ -1,6 +1,6 @@
 #include "store_error_formatter.h"
 
-namespace cgw {
+namespace ccu {
 namespace fw {
 namespace store {
 
@@ -32,4 +32,4 @@ std::string StoreErrorFormatter::format(std::string_view code,
 
 } // namespace store
 } // namespace fw
-} // namespace cgw
+} // namespace ccu

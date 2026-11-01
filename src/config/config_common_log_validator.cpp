@@ -3,7 +3,7 @@
 #include <cctype>
 #include <string>
 
-namespace cgw {
+namespace ccu {
 namespace fw {
 namespace config {
 
@@ -30,7 +30,7 @@ void CommonLogValidator::validate(const ConfigSnapshot& snapshot) const {
         int64_t v = snapshot.get<int64_t>("common.log.schema_version");
         if (v != 1) {
             throw ConfigException(
-                "CGW-FW-0004",
+                "CCU-FW-0004",
                 "common.log.schema_version must be 1, got " + std::to_string(v),
                 "", "common.log.schema_version");
         }
@@ -41,7 +41,7 @@ void CommonLogValidator::validate(const ConfigSnapshot& snapshot) const {
         std::string lvl = snapshot.get<std::string>("common.log.level");
         if (!isLevelValid(lvl)) {
             throw ConfigException(
-                "CGW-FW-0004",
+                "CCU-FW-0004",
                 "common.log.level invalid: " + lvl,
                 "", "common.log.level");
         }
@@ -52,7 +52,7 @@ void CommonLogValidator::validate(const ConfigSnapshot& snapshot) const {
         int64_t qs = snapshot.get<int64_t>("common.log.async.queue_size");
         if (qs <= 0) {
             throw ConfigException(
-                "CGW-FW-0004",
+                "CCU-FW-0004",
                 "common.log.async.queue_size must be positive",
                 "", "common.log.async.queue_size");
         }
@@ -66,7 +66,7 @@ void CommonLogValidator::validate(const ConfigSnapshot& snapshot) const {
     if (fileEnabled) {
         if (!snapshot.has("common.log.file.root")) {
             throw ConfigException(
-                "CGW-FW-0003",
+                "CCU-FW-0003",
                 "common.log.file.root is required when file sink is enabled",
                 "", "common.log.file.root");
         }
@@ -78,13 +78,13 @@ void CommonLogValidator::validate(const ConfigSnapshot& snapshot) const {
                              ? snapshot.get<int64_t>("common.log.file.total_budget_mb") : 100;
         if (maxSize <= 0 || maxFiles <= 0 || budget <= 0) {
             throw ConfigException(
-                "CGW-FW-0004",
+                "CCU-FW-0004",
                 "common.log.file size/files/budget must be positive",
                 "", "common.log.file");
         }
         if (static_cast<int64_t>(maxSize) * maxFiles > budget) {
             throw ConfigException(
-                "CGW-FW-0004",
+                "CCU-FW-0004",
                 "common.log.file max_file_size_mb * max_files (" +
                     std::to_string(maxSize * maxFiles) +
                     ") exceeds total_budget_mb (" + std::to_string(budget) + ")",
@@ -97,7 +97,7 @@ void CommonLogValidator::validate(const ConfigSnapshot& snapshot) const {
         int64_t pmb = snapshot.get<int64_t>("common.log.redact.payload_max_bytes");
         if (pmb <= 0) {
             throw ConfigException(
-                "CGW-FW-0004",
+                "CCU-FW-0004",
                 "common.log.redact.payload_max_bytes must be positive (not unlimited)",
                 "", "common.log.redact.payload_max_bytes");
         }
@@ -106,4 +106,4 @@ void CommonLogValidator::validate(const ConfigSnapshot& snapshot) const {
 
 } // namespace config
 } // namespace fw
-} // namespace cgw
+} // namespace ccu

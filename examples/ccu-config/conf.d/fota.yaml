@@ -1,4 +1,4 @@
-# /etc/cgw/conf.d/fota.yaml - CGW-FOTA service configuration
+# /etc/ccu/conf.d/fota.yaml - CCU-FOTA service configuration
 fota:
   log:
     level: INFO

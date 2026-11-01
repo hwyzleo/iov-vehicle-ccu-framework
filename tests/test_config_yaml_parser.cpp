@@ -5,8 +5,8 @@
 #include <cassert>
 #include <iostream>
 
-using namespace cgw::fw::config;
-using cgwtest::TempDir;
+using namespace ccu::fw::config;
+using ccutest::TempDir;
 
 void test_valid_map() {
     auto n = YamlParser::parse("common:\n  log:\n    level: INFO\n", "mem");
@@ -36,7 +36,7 @@ void test_syntax_error() {
         YamlParser::parse("common: [unclosed\n", "mem");
     } catch (const ConfigException& e) {
         threw = true;
-        assert(e.code == "CGW-FW-0002");
+        assert(e.code == "CCU-FW-0002");
     }
     assert(threw);
     std::cout << "  [PASS] test_syntax_error" << std::endl;

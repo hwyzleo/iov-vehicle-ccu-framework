@@ -1,17 +1,17 @@
-// examples/hash_consumer.cpp - minimal CGW consumer sample (CR-004 §13).
+// examples/hash_consumer.cpp - minimal CCU consumer sample (CR-004 §13).
 //
 // Demonstrates the consumer flow: select fields -> stable sort -> canonical
 // bytes -> SHA-256 -> compare. Links the exported build-tree alias
-// cgw::framework-hash. This is a sample, NOT a unit test; real business
+// ccu::framework-hash. This is a sample, NOT a unit test; real business
 // canonicalization rules belong to each service (CR-004 §8/§9.4).
-#include "cgw/fw/hash/sha256.hpp"
+#include "ccu/fw/hash/sha256.hpp"
 
 #include <iostream>
 #include <map>
 #include <string>
 
 int main() {
-    using cgw::fw::hash::sha256_hex;
+    using ccu::fw::hash::sha256_hex;
 
     // A consumer selects fields and stable-sorts them (std::map orders by key).
     std::map<std::string, std::string> fields = {

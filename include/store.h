@@ -7,7 +7,7 @@
 #include <string>
 #include <string_view>
 
-namespace cgw {
+namespace ccu {
 namespace fw {
 namespace store {
 
@@ -22,7 +22,7 @@ namespace store {
 class Store {
 public:
     // Validate service/key rules, normalize root, create the 0700 service
-    // directory. Throws StoreException(CGW-FW-0101) on path/permission failure.
+    // directory. Throws StoreException(CCU-FW-0101) on path/permission failure.
     static Store open(std::string_view service, const StoreOptions& options = {});
 
     // Encode value with the registered Serializer and persist atomically.
@@ -34,21 +34,21 @@ public:
                           detail::SerializerDispatch<T>::encode(value));
     }
 
-    // Load and decode. Throws CGW-FW-0105 if missing, CGW-FW-0104 on
-    // decode/type-mismatch/size, CGW-FW-0101/0102 on path/I/O.
+    // Load and decode. Throws CCU-FW-0105 if missing, CCU-FW-0104 on
+    // decode/type-mismatch/size, CCU-FW-0101/0102 on path/I/O.
     template <class T>
     T load(std::string_view key) const {
         return detail::SerializerDispatch<T>::decode(detail::loadBytes(*m_impl, key));
     }
 
-    // Returns defaultValue only when the key is missing (CGW-FW-0105).
-    // CGW-FW-0101~0104 are never swallowed.
+    // Returns defaultValue only when the key is missing (CCU-FW-0105).
+    // CCU-FW-0101~0104 are never swallowed.
     template <class T>
     T loadOr(std::string_view key, T defaultValue) const {
         try {
             return load<T>(key);
         } catch (const StoreException& e) {
-            if (e.code == "CGW-FW-0105") return defaultValue;
+            if (e.code == "CCU-FW-0105") return defaultValue;
             throw;
         }
     }
@@ -58,7 +58,7 @@ public:
         try {
             return load<std::string>(key);
         } catch (const StoreException& e) {
-            if (e.code == "CGW-FW-0105") return std::string(defaultValue);
+            if (e.code == "CCU-FW-0105") return std::string(defaultValue);
             throw;
         }
     }
@@ -87,4 +87,4 @@ private:
 
 } // namespace store
 } // namespace fw
-} // namespace cgw
+} // namespace ccu

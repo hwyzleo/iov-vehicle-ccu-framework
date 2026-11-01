@@ -6,7 +6,7 @@
 #include <string>
 #include <string_view>
 
-namespace cgw {
+namespace ccu {
 namespace fw {
 namespace store {
 
@@ -43,11 +43,11 @@ public:
     static fs::path lockFile(const fs::path& serviceDir, std::string_view key);
 
     // Create <root>/<svc> with 0700, verify it is a directory and not a
-    // symlink. Throws CGW-FW-0101 on any path/permission/symlink failure.
+    // symlink. Throws CCU-FW-0101 on any path/permission/symlink failure.
     static void ensureServiceDir(const fs::path& root, std::string_view service,
                                  std::string_view svcForError = "");
 };
 
 } // namespace store
 } // namespace fw
-} // namespace cgw
+} // namespace ccu

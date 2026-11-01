@@ -1,6 +1,6 @@
 #include "config_error_formatter.h"
 
-namespace cgw {
+namespace ccu {
 namespace fw {
 namespace config {
 
@@ -35,4 +35,4 @@ std::string ConfigErrorFormatter::format(std::string_view code,
 
 } // namespace config
 } // namespace fw
-} // namespace cgw
+} // namespace ccu

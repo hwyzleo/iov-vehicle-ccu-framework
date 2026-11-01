@@ -7,7 +7,7 @@
 #include <string>
 #include <string_view>
 
-namespace cgw {
+namespace ccu {
 namespace fw {
 namespace config {
 
@@ -15,13 +15,13 @@ namespace config {
 // LoadOptions
 // ============================================================
 // configRoots: ordered configuration root directories (production default
-//              at least /etc/cgw). Duplicate roots are de-duplicated keeping
+//              at least /etc/ccu). Duplicate roots are de-duplicated keeping
 //              first occurrence order. Roots are lexically normalized before
 //              lookup; empty/illegal roots are rejected at init.
 // cwd:         stable working directory used for ./config/* and ./<svc>.yaml.
 //              systemd services SHALL set an explicit WorkingDirectory.
 struct LoadOptions {
-    std::vector<std::filesystem::path> configRoots{"/etc/cgw"};
+    std::vector<std::filesystem::path> configRoots{"/etc/ccu"};
     std::filesystem::path cwd{"."};
 };
 
@@ -31,7 +31,7 @@ struct LoadOptions {
 class Validator {
 public:
     virtual ~Validator() = default;
-    // Throw ConfigException (CGW-FW-0003 / CGW-FW-0004) on failure.
+    // Throw ConfigException (CCU-FW-0003 / CCU-FW-0004) on failure.
     virtual void validate(const ConfigSnapshot& snapshot) const = 0;
 };
 
@@ -53,4 +53,4 @@ public:
 
 } // namespace config
 } // namespace fw
-} // namespace cgw
+} // namespace ccu

@@ -3,17 +3,23 @@
 
 #include "someip_impl.h"
 
+#if defined(CCU_FW_HAVE_VSOMEIP)
+// Production backend (CR-005 §15). Compiled in only when the platform build
+// enables CCU_FW_SOMEIP_VSOMEIP, so HOST builds carry no vsomeip dependency.
+#include "someip_vsomeip_backend.h"
+#endif
+
 #include <queue>
 #include <set>
 #include <thread>
 
-namespace cgw::fw::someip {
+namespace ccu::fw::someip {
 namespace detail {
 
 namespace {
 
 // Process-wide application identity registry (CR-005 §5). Duplicate identity
-// before start yields CGW-FW-0302.
+// before start yields CCU-FW-0302.
 std::mutex& identityMutex() {
     static std::mutex m;
     return m;
@@ -34,66 +40,66 @@ void throwBad(std::string code, const std::string& what) {
 // ============================================================
 void validateServiceKey(ServiceKey key) {
     if (key.service == 0x0000 || key.service == 0xFFFF) {
-        throwBad("CGW-FW-0302", "validateServiceKey: reserved service id");
+        throwBad("CCU-FW-0302", "validateServiceKey: reserved service id");
     }
     if (key.instance == 0xFFFF) {
-        throwBad("CGW-FW-0302", "validateServiceKey: reserved instance id (wildcard)");
+        throwBad("CCU-FW-0302", "validateServiceKey: reserved instance id (wildcard)");
     }
 }
 
 void validateMethodId(MethodId id) {
     if (id == 0x0000 || id >= 0x8000) {
-        throwBad("CGW-FW-0302", "validateMethodId: reserved/out-of-range method id");
+        throwBad("CCU-FW-0302", "validateMethodId: reserved/out-of-range method id");
     }
 }
 
 void validateEventId(EventId id) {
     if (id < 0x8000 || id == 0xFFFF) {
-        throwBad("CGW-FW-0302", "validateEventId: out-of-range event id");
+        throwBad("CCU-FW-0302", "validateEventId: out-of-range event id");
     }
 }
 
 void validateEventgroupId(EventgroupId id) {
     if (id == 0x0000 || id == 0xFFFF) {
-        throwBad("CGW-FW-0302", "validateEventgroupId: reserved eventgroup id");
+        throwBad("CCU-FW-0302", "validateEventgroupId: reserved eventgroup id");
     }
 }
 
 void validatePayload(PayloadView pv, std::size_t maxBytes) {
     if (pv.size > 0 && pv.data == nullptr) {
-        throwBad("CGW-FW-0306", "validatePayload: non-zero length with null data pointer");
+        throwBad("CCU-FW-0306", "validatePayload: non-zero length with null data pointer");
     }
     if (pv.size > maxBytes) {
-        throwBad("CGW-FW-0306", "validatePayload: payload exceeds max bytes");
+        throwBad("CCU-FW-0306", "validatePayload: payload exceeds max bytes");
     }
 }
 
 void validateConfig(const SomeIpConfig& cfg) {
     if (cfg.application.empty()) {
-        throwBad("CGW-FW-0302", "validateConfig: application identity empty");
+        throwBad("CCU-FW-0302", "validateConfig: application identity empty");
     }
     if (cfg.maxPayloadBytes == 0 || cfg.maxInflightCalls == 0 ||
         cfg.callbackQueueSize == 0 || cfg.maxProviders == 0 ||
         cfg.maxClients == 0 || cfg.maxSubscriptionsPerClient == 0 ||
         cfg.maxRetryTimers == 0) {
-        throwBad("CGW-FW-0302", "validateConfig: resource limit must be positive");
+        throwBad("CCU-FW-0302", "validateConfig: resource limit must be positive");
     }
     if (cfg.shutdownTimeout.count() <= 0 || cfg.callTimeout.count() <= 0) {
-        throwBad("CGW-FW-0302", "validateConfig: timeout must be positive");
+        throwBad("CCU-FW-0302", "validateConfig: timeout must be positive");
     }
     const auto& d = cfg.discovery;
     if (d.enabled) {
         if (d.initialBackoff.count() <= 0) {
-            throwBad("CGW-FW-0302", "validateConfig: initial backoff must be positive");
+            throwBad("CCU-FW-0302", "validateConfig: initial backoff must be positive");
         }
         if (d.maxBackoff < d.initialBackoff) {
-            throwBad("CGW-FW-0302", "validateConfig: max backoff < initial backoff");
+            throwBad("CCU-FW-0302", "validateConfig: max backoff < initial backoff");
         }
         if (d.multiplier < 1.0) {
-            throwBad("CGW-FW-0302", "validateConfig: multiplier must be >= 1.0");
+            throwBad("CCU-FW-0302", "validateConfig: multiplier must be >= 1.0");
         }
         if (d.jitterPercent < 0 || d.jitterPercent > 100) {
-            throwBad("CGW-FW-0302", "validateConfig: jitter percent out of range");
+            throwBad("CCU-FW-0302", "validateConfig: jitter percent out of range");
         }
     }
 }
@@ -182,13 +188,20 @@ RuntimeImpl::RuntimeImpl(SomeIpConfig config, std::shared_ptr<Executor> executor
         m_executor = std::make_shared<ThreadPoolExecutor>(n);
     }
     if (!m_backend) {
-        // Migration step 1: the deterministic fake is the only backend. The
-        // platform-approved production backend is wired in a follow-up CR (§15).
+        // Backend selection (CR-005 §15). A build configured with
+        // CCU_FW_SOMEIP_VSOMEIP=ON gets the platform-approved production
+        // backend; otherwise the deterministic no-network fake is used. HOST
+        // tests are unaffected either way: they inject FakeSomeIpBackend
+        // explicitly through detail::makeTestRuntime.
+#if defined(CCU_FW_HAVE_VSOMEIP)
+        m_backend = std::make_shared<VsomeipBackend>(m_executor, m_config);
+#else
         m_backend = std::make_shared<FakeSomeIpBackend>(m_executor);
+#endif
     }
-    // Identity uniqueness: duplicate application before start -> CGW-FW-0302.
+    // Identity uniqueness: duplicate application before start -> CCU-FW-0302.
     if (!registerIdentity(m_application)) {
-        throwBad("CGW-FW-0302", "create: duplicate application identity: " + m_application);
+        throwBad("CCU-FW-0302", "create: duplicate application identity: " + m_application);
     }
     m_identityRegistered = true;
 }
@@ -197,7 +210,7 @@ RuntimeImpl::~RuntimeImpl() {
     try {
         stop();
     } catch (...) {
-        // Best-effort cleanup (CGW-FW-0310); never throw from destructor.
+        // Best-effort cleanup (CCU-FW-0310); never throw from destructor.
     }
     if (m_identityRegistered) {
         unregisterIdentity(m_application);
@@ -209,7 +222,7 @@ void RuntimeImpl::start() {
         std::lock_guard<std::mutex> lk(m_mutex);
         if (m_state == RuntimeState::Running) return;
         if (m_state != RuntimeState::Created) {
-            throwBad("CGW-FW-0301", "start: invalid runtime state");
+            throwBad("CCU-FW-0301", "start: invalid runtime state");
         }
         m_state = RuntimeState::Starting;
     }
@@ -222,7 +235,7 @@ void RuntimeImpl::start() {
     } catch (const std::exception&) {
         std::lock_guard<std::mutex> lk(m_mutex);
         m_state = RuntimeState::Created;
-        throwBad("CGW-FW-0301", "start: backend start failed");
+        throwBad("CCU-FW-0301", "start: backend start failed");
     }
     std::lock_guard<std::mutex> lk(m_mutex);
     m_state = RuntimeState::Running;
@@ -240,7 +253,7 @@ void RuntimeImpl::stop() {
         m_state = RuntimeState::Stopping;
     }
     // Withdraw, fire Stopping callbacks, clear backend state, drain executor
-    // (CR-005 §11). Best-effort on backend/executor failure (CGW-FW-0310).
+    // (CR-005 §11). Best-effort on backend/executor failure (CCU-FW-0310).
     try {
         m_backend->stop();
     } catch (...) { /* reported via state, not rethrown */ }
@@ -269,7 +282,7 @@ std::shared_ptr<ProviderImpl> RuntimeImpl::createProvider(ServiceKey key,
     {
         std::lock_guard<std::mutex> lk(m_mutex);
         if (m_providerCount >= m_config.maxProviders) {
-            throwBad("CGW-FW-0309", "createProvider: provider limit exhausted");
+            throwBad("CCU-FW-0309", "createProvider: provider limit exhausted");
         }
         ++m_providerCount;
     }
@@ -282,7 +295,7 @@ std::shared_ptr<ClientImpl> RuntimeImpl::createClient(ServiceKey key,
     {
         std::lock_guard<std::mutex> lk(m_mutex);
         if (m_clientCount >= m_config.maxClients) {
-            throwBad("CGW-FW-0309", "createClient: client limit exhausted");
+            throwBad("CCU-FW-0309", "createClient: client limit exhausted");
         }
         ++m_clientCount;
     }
@@ -326,7 +339,7 @@ void RuntimeImpl::unregisterIdentity(const std::string& application) {
 }
 
 // ============================================================
-// SomeIpRuntime facade (in cgw::fw::someip, not detail)
+// SomeIpRuntime facade (in ccu::fw::someip, not detail)
 // ============================================================
 }  // namespace detail
 
@@ -351,4 +364,4 @@ Client SomeIpRuntime::createClient(ServiceKey key, InterfaceVersion version) {
     return Client(m_impl->createClient(key, version));
 }
 
-}  // namespace cgw::fw::someip
+}  // namespace ccu::fw::someip

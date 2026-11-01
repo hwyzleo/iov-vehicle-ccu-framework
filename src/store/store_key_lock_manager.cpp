@@ -7,12 +7,14 @@
 #include <unistd.h>
 
 #include <atomic>
+#include <cerrno>
 #include <chrono>
+#include <cstring>
 #include <map>
 #include <system_error>
 #include <thread>
 
-namespace cgw {
+namespace ccu {
 namespace fw {
 namespace store {
 
@@ -23,8 +25,8 @@ namespace {
 void failLock(std::string_view reason, std::string_view service,
               std::string_view key, std::string_view path) {
     throw StoreException(
-        "CGW-FW-0103",
-        StoreErrorFormatter::format("CGW-FW-0103", reason, service, key, path,
+        "CCU-FW-0103",
+        StoreErrorFormatter::format("CCU-FW-0103", reason, service, key, path,
                                     "lock"),
         std::string(service), std::string(key), std::string(path), "lock");
 }
@@ -110,4 +112,4 @@ std::unique_ptr<LockHandle> KeyLockManager::acquire(std::string_view key,
 
 } // namespace store
 } // namespace fw
-} // namespace cgw
+} // namespace ccu

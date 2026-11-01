@@ -1,5 +1,5 @@
-# /etc/cgw/common.yaml - CGW common baseline (cross-service)
-# Installed by cgw-framework-config deployment.
+# /etc/ccu/common.yaml - CCU common baseline (cross-service)
+# Installed by ccu-framework-config deployment.
 common:
   log:
     schema_version: 1
@@ -13,7 +13,7 @@ common:
       enabled: true
     file:
       enabled: false
-      root: /var/log/cgw
+      root: /var/log/ccu
       max_file_size_mb: 20
       max_files: 5
       total_budget_mb: 100

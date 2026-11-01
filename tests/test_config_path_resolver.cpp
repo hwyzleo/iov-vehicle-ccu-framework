@@ -5,8 +5,8 @@
 #include <iostream>
 #include <algorithm>
 
-using namespace cgw::fw::config;
-using cgwtest::TempDir;
+using namespace ccu::fw::config;
+using ccutest::TempDir;
 
 static bool hasSource(const std::vector<ConfigEntry>& entries, const std::string& source) {
     return std::any_of(entries.begin(), entries.end(),
@@ -39,10 +39,10 @@ void test_service_name_invalid() {
 
 // --- root normalization ---
 void test_normalize_roots_dedupe_and_trailing_slash() {
-    std::vector<std::filesystem::path> roots = {"/etc/cgw/", "/etc/cgw", "/tmp/x"};
+    std::vector<std::filesystem::path> roots = {"/etc/ccu/", "/etc/ccu", "/tmp/x"};
     auto out = PathResolver::normalizeRoots(roots);
     assert(out.size() == 2);
-    assert(out[0] == "/etc/cgw");
+    assert(out[0] == "/etc/ccu");
     assert(out[1] == "/tmp/x");
     std::cout << "  [PASS] test_normalize_roots_dedupe_and_trailing_slash" << std::endl;
 }
@@ -53,7 +53,7 @@ void test_normalize_roots_reject_empty() {
         PathResolver::normalizeRoots({""});
     } catch (const ConfigException& e) {
         threw = true;
-        assert(e.code == "CGW-FW-0004");
+        assert(e.code == "CCU-FW-0004");
     }
     assert(threw);
     std::cout << "  [PASS] test_normalize_roots_reject_empty" << std::endl;
@@ -150,7 +150,7 @@ void test_required_common_missing() {
         PathResolver::resolveAll("diag", {roots.path}, proj.path);
     } catch (const ConfigException& e) {
         threw = true;
-        assert(e.code == "CGW-FW-0001");
+        assert(e.code == "CCU-FW-0001");
     }
     assert(threw);
     std::cout << "  [PASS] test_required_common_missing" << std::endl;
@@ -167,7 +167,7 @@ void test_found_not_regular_no_fallback() {
         PathResolver::resolveAll("diag", {rootsA.path, rootsB.path}, TempDir().path);
     } catch (const ConfigException& e) {
         threw = true;
-        assert(e.code == "CGW-FW-0001");
+        assert(e.code == "CCU-FW-0001");
     }
     assert(threw); // must NOT fall back to rootsB
     std::cout << "  [PASS] test_found_not_regular_no_fallback" << std::endl;

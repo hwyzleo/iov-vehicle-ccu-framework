@@ -5,7 +5,7 @@
 #include <cctype>
 #include <unistd.h>
 
-namespace cgw {
+namespace ccu {
 namespace fw {
 namespace log {
 
@@ -99,4 +99,4 @@ bool ConsoleSink::isAvailable() const {
 
 } // namespace log
 } // namespace fw
-} // namespace cgw
+} // namespace ccu

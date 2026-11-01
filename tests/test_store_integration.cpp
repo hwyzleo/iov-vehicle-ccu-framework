@@ -7,9 +7,9 @@
 #include <fstream>
 #include <iostream>
 
-using namespace cgw::fw::config;
-using namespace cgw::fw::store;
-using cgwtest::TempDir;
+using namespace ccu::fw::config;
+using namespace ccu::fw::store;
+using ccutest::TempDir;
 namespace fs = std::filesystem;
 
 // Minimal consumer pattern: each service opens its own Store with the root
@@ -59,19 +59,19 @@ void test_config_root_injection() {
     lopt.cwd = cwd;
     auto snap = Config::load("diag", lopt);
     std::string root = snap->getOr<std::string>("common.store.root",
-                                                "/var/lib/cgw");
+                                                "/var/lib/ccu");
     assert(root == storeRoot.string());
 
     // Store::open with the injected root (store has no config dependency).
     StoreOptions sopt; sopt.root = root;
     Store s = Store::open("diag", sopt);
     s.save<int64_t>("counter", 123);
-    s.save<std::string>("name", "cgw");
+    s.save<std::string>("name", "ccu");
 
     // Restart: reopen and verify persistence.
     Store s2 = Store::open("diag", sopt);
     assert(s2.load<int64_t>("counter") == 123);
-    assert(s2.load<std::string>("name") == "cgw");
+    assert(s2.load<std::string>("name") == "ccu");
 
     // Remove and verify idempotent.
     assert(s2.remove("counter"));

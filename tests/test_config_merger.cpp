@@ -5,7 +5,7 @@
 #include <iostream>
 #include <string>
 
-using namespace cgw::fw::config;
+using namespace ccu::fw::config;
 
 static NodePtr scalar(const std::string& s) { return ConfigNode::makeScalar(s); }
 static NodePtr nullNode() { return ConfigNode::makeNull(); }

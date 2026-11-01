@@ -4,7 +4,7 @@
 
 #include <utility>
 
-namespace cgw::fw::someip {
+namespace ccu::fw::someip {
 namespace detail {
 
 ProviderImpl::ProviderImpl(std::shared_ptr<RuntimeImpl> runtime, ServiceKey key,
@@ -15,7 +15,7 @@ ProviderImpl::~ProviderImpl() {
     try {
         if (m_offering) stopOffer();
     } catch (...) {
-        // Best-effort cleanup (CGW-FW-0310); never throw from destructor.
+        // Best-effort cleanup (CCU-FW-0310); never throw from destructor.
     }
     if (m_runtime) m_runtime->unregisterProvider();
 }
@@ -24,18 +24,18 @@ void ProviderImpl::registerMethod(MethodId id, MethodHandler handler) {
     validateMethodId(id);
     std::lock_guard<std::mutex> lk(m_mutex);
     if (m_offering) {
-        throw SomeIpException("CGW-FW-0302",
+        throw SomeIpException("CCU-FW-0302",
                               "registerMethod: must complete before offer()");
     }
     if (m_methods.count(id)) {
-        throw SomeIpException("CGW-FW-0302", "registerMethod: duplicate method id");
+        throw SomeIpException("CCU-FW-0302", "registerMethod: duplicate method id");
     }
     m_methods.emplace(id, std::move(handler));
 }
 
 void ProviderImpl::offer() {
     if (!m_runtime->running()) {
-        throw SomeIpException("CGW-FW-0301", "offer: runtime not running");
+        throw SomeIpException("CCU-FW-0301", "offer: runtime not running");
     }
     {
         std::lock_guard<std::mutex> lk(m_mutex);
@@ -62,7 +62,7 @@ void ProviderImpl::offer() {
             }
             // Handler runs on the Executor thread, outside the registry lock
             // (CR-005 §6/§11). Exceptions propagate to the backend, which maps
-            // them to CGW-FW-0307 / a SOME/IP error response (CR-005 §12).
+            // them to CCU-FW-0307 / a SOME/IP error response (CR-005 §12).
             return handler(ctx, payload);
         });
 }
@@ -85,10 +85,10 @@ void ProviderImpl::offerEvent(EventId event, EventgroupId group, EventOptions op
     {
         std::lock_guard<std::mutex> lk(m_mutex);
         if (!m_offering) {
-            throw SomeIpException("CGW-FW-0303", "offerEvent: provider not offering");
+            throw SomeIpException("CCU-FW-0303", "offerEvent: provider not offering");
         }
         if (m_offeredEvents.count(event)) {
-            throw SomeIpException("CGW-FW-0302", "offerEvent: event already offered");
+            throw SomeIpException("CCU-FW-0302", "offerEvent: event already offered");
         }
         m_offeredEvents.emplace(event, group);
     }
@@ -109,10 +109,10 @@ void ProviderImpl::notify(EventId event, PayloadView payload) {
     {
         std::lock_guard<std::mutex> lk(m_mutex);
         if (!m_offering) {
-            throw SomeIpException("CGW-FW-0308", "notify: provider not offering");
+            throw SomeIpException("CCU-FW-0308", "notify: provider not offering");
         }
         if (!m_offeredEvents.count(event)) {
-            throw SomeIpException("CGW-FW-0308", "notify: event not offered");
+            throw SomeIpException("CCU-FW-0308", "notify: event not offered");
         }
     }
     m_runtime->backend().notify(m_key, event, payload);
@@ -142,4 +142,4 @@ void Provider::notify(EventId event, PayloadView payload) {
 }
 bool Provider::offering() const { return m_impl->offering(); }
 
-}  // namespace cgw::fw::someip
+}  // namespace ccu::fw::someip

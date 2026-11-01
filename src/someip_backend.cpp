@@ -14,16 +14,16 @@
 #include <unordered_map>
 #include <utility>
 
-namespace cgw::fw::someip {
+namespace ccu::fw::someip {
 namespace detail {
 
 namespace {
 
 CallResult transportFailure() {
-    return CallResult::fail("CGW-FW-0305", "transport failure");
+    return CallResult::fail("CCU-FW-0305", "transport failure");
 }
 CallResult unavailableResult() {
-    return CallResult::fail("CGW-FW-0304", "service unavailable");
+    return CallResult::fail("CCU-FW-0304", "service unavailable");
 }
 
 }  // namespace
@@ -144,7 +144,7 @@ void FakeSomeIpBackend::offerService(ServiceKey key, InterfaceVersion ver) {
     {
         std::lock_guard<std::mutex> lk(m_state->mutex);
         if (m_state->offered.count(key)) {
-            throw SomeIpException("CGW-FW-0302", "offerService: service already offered");
+            throw SomeIpException("CCU-FW-0302", "offerService: service already offered");
         }
         FakeSomeIpBackend::State::OfferedService svc;
         svc.version = ver;
@@ -180,7 +180,7 @@ void FakeSomeIpBackend::setMethodDispatcher(ServiceKey key, MethodDispatcher dis
     std::lock_guard<std::mutex> lk(m_state->mutex);
     auto it = m_state->offered.find(key);
     if (it == m_state->offered.end()) {
-        throw SomeIpException("CGW-FW-0302", "setMethodDispatcher: service not offered");
+        throw SomeIpException("CCU-FW-0302", "setMethodDispatcher: service not offered");
     }
     it->second.dispatcher = std::move(dispatch);
 }
@@ -190,10 +190,10 @@ void FakeSomeIpBackend::offerEvent(ServiceKey key, EventId event, EventgroupId g
     std::lock_guard<std::mutex> lk(m_state->mutex);
     auto it = m_state->offered.find(key);
     if (it == m_state->offered.end()) {
-        throw SomeIpException("CGW-FW-0303", "offerEvent: service not offered");
+        throw SomeIpException("CCU-FW-0303", "offerEvent: service not offered");
     }
     if (it->second.events.count(event)) {
-        throw SomeIpException("CGW-FW-0302", "offerEvent: event already offered");
+        throw SomeIpException("CCU-FW-0302", "offerEvent: event already offered");
     }
     FakeSomeIpBackend::State::OfferedEvent ev;
     ev.group = group;
@@ -218,7 +218,7 @@ void FakeSomeIpBackend::notify(ServiceKey key, EventId event, PayloadView payloa
         std::lock_guard<std::mutex> lk(m_state->mutex);
         auto it = m_state->offered.find(key);
         if (it == m_state->offered.end() || !it->second.events.count(event)) {
-            throw SomeIpException("CGW-FW-0308", "notify: event not offered");
+            throw SomeIpException("CCU-FW-0308", "notify: event not offered");
         }
         ctx.service = key;
         ctx.event = event;
@@ -245,7 +245,7 @@ void FakeSomeIpBackend::requestService(ServiceKey key, InterfaceVersion ver,
     {
         std::lock_guard<std::mutex> lk(m_state->mutex);
         if (m_state->requested.count(key)) {
-            throw SomeIpException("CGW-FW-0302", "requestService: already requested");
+            throw SomeIpException("CCU-FW-0302", "requestService: already requested");
         }
         FakeSomeIpBackend::State::RequestedService rs;
         rs.version = ver;
@@ -324,7 +324,7 @@ void FakeSomeIpBackend::sendRequest(ServiceKey target, MethodId method, PayloadV
 
     // Post the handler invocation on the executor: run dispatch, map the
     // MethodResult to a CallResult, then deliver onResponse. Handler exceptions
-    // map to CGW-FW-0307 (CR-005 §6/§12). At most one response is sent.
+    // map to CCU-FW-0307 (CR-005 §6/§12). At most one response is sent.
     State* state = m_state.get();
     state->executor->post([state, dispatch, ctx, payload, onResponse]() {
         CallResult result;
@@ -341,9 +341,9 @@ void FakeSomeIpBackend::sendRequest(ServiceKey target, MethodId method, PayloadV
         } catch (const SomeIpException& e) {
             result = CallResult::fail(e.code, e.what());
         } catch (const std::exception& e) {
-            result = CallResult::fail("CGW-FW-0307", e.what());
+            result = CallResult::fail("CCU-FW-0307", e.what());
         } catch (...) {
-            result = CallResult::fail("CGW-FW-0307", "handler exception");
+            result = CallResult::fail("CCU-FW-0307", "handler exception");
         }
         {
             std::lock_guard<std::mutex> lk(state->mutex);
@@ -536,4 +536,4 @@ std::size_t FakeSomeIpBackend::inFlight() const {
 }
 
 }  // namespace detail
-}  // namespace cgw::fw::someip
+}  // namespace ccu::fw::someip

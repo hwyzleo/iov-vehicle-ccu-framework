@@ -7,8 +7,8 @@
 #include <iostream>
 #include <unistd.h>
 
-using namespace cgw::fw::store;
-using cgwtest::TempDir;
+using namespace ccu::fw::store;
+using ccutest::TempDir;
 namespace fs = std::filesystem;
 
 static bool isRoot() { return ::geteuid() == 0; }
@@ -73,7 +73,7 @@ void test_commit_size_limit() {
         AtomicWriter::commit(finalP, dir, "svc", "k", big, 10);
     } catch (const StoreException& e) {
         threw = true;
-        assert(e.code == "CGW-FW-0104");
+        assert(e.code == "CCU-FW-0104");
     }
     assert(threw);
     assert(!fs::exists(finalP));
@@ -99,7 +99,7 @@ void test_commit_readonly_dir_preserves_old() {
                              std::vector<uint8_t>{'n', 'e', 'w'}, 1024);
     } catch (const StoreException& e) {
         threw = true;
-        assert(e.code == "CGW-FW-0102");
+        assert(e.code == "CCU-FW-0102");
         assert(e.stage == "temp-create");
     }
     assert(threw);

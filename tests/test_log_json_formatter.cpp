@@ -3,7 +3,7 @@
 #include <cassert>
 #include <iostream>
 
-using namespace cgw::fw::log;
+using namespace ccu::fw::log;
 
 void test_json_basic_format() {
     std::vector<Field> fields;

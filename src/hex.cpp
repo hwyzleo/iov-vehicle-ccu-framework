@@ -1,5 +1,5 @@
-// src/hex.cpp - reversible byte<->Hex codec for cgw-framework-hash.
-// CGW-FW-DSN-CR-007.
+// src/hex.cpp - reversible byte<->Hex codec for ccu-framework-hash.
+// CCU-FW-DSN-CR-007.
 //
 // Self-contained, C++17 standard library only. No third-party runtime
 // dependency. License: project LICENSE.
@@ -14,9 +14,9 @@
 //   - On error, no partial result is exposed: the result is a function-local
 //     return object and the exception propagates before it is returned.
 
-#include "cgw/fw/hash/hex.hpp"
+#include "ccu/fw/hash/hex.hpp"
 
-namespace cgw::fw::hash {
+namespace ccu::fw::hash {
 namespace {
 
 // Fixed lowercase Hex table (CR-007 §5). Internal to this translation unit;
@@ -48,13 +48,13 @@ std::string bytesToHex(ByteView input) {
     // CR-007 §5: validate pointer and output-length range before encoding.
     if (input.size > 0 && input.data == nullptr) {
         throw HexException(
-            "CGW-FW-0412",
+            "CCU-FW-0412",
             "bytesToHex: non-zero input length with null data pointer");
     }
     // Output length is 2 * input.size; it must be representable in a string.
     if (input.size > std::string{}.max_size() / 2) {
         throw HexException(
-            "CGW-FW-0412",
+            "CCU-FW-0412",
             "bytesToHex: output length overflows string representation");
     }
 
@@ -77,7 +77,7 @@ std::string hexToBytes(std::string_view hex) {
     // CR-007 §6: check parity before allocation/decode; no partial result.
     if (hex.size() % 2 != 0) {
         throw HexException(
-            "CGW-FW-0410",
+            "CCU-FW-0410",
             "hexToBytes: odd Hex length");
     }
 
@@ -87,14 +87,14 @@ std::string hexToBytes(std::string_view hex) {
         const int hi = decodeNibble(hex[i * 2]);
         if (hi < 0) {
             throw HexException(
-                "CGW-FW-0411",
+                "CCU-FW-0411",
                 "hexToBytes: invalid Hex character",
                 i * 2);
         }
         const int lo = decodeNibble(hex[i * 2 + 1]);
         if (lo < 0) {
             throw HexException(
-                "CGW-FW-0411",
+                "CCU-FW-0411",
                 "hexToBytes: invalid Hex character",
                 i * 2 + 1);
         }
@@ -104,4 +104,4 @@ std::string hexToBytes(std::string_view hex) {
     return out;
 }
 
-}  // namespace cgw::fw::hash
+}  // namespace ccu::fw::hash

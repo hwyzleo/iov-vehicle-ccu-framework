@@ -7,8 +7,8 @@
 #include <fstream>
 #include <iostream>
 
-using namespace cgw::fw::store;
-using cgwtest::TempDir;
+using namespace ccu::fw::store;
+using ccutest::TempDir;
 namespace fs = std::filesystem;
 
 // ---- FlushPolicy unit tests ----
@@ -109,7 +109,7 @@ void test_deferred_not_durable_without_flush() {
     Store s2 = openStore(tmp.path, FlushMode::Deferred);
     bool threw = false;
     try { s2.load<int64_t>("counter"); }
-    catch (const StoreException& e) { threw = (e.code == "CGW-FW-0105"); }
+    catch (const StoreException& e) { threw = (e.code == "CCU-FW-0105"); }
     assert(threw);
     std::cout << "  [PASS] test_deferred_not_durable_without_flush" << std::endl;
 }
@@ -155,7 +155,7 @@ void test_flush_failure_restages() {
                     fs::perm_options::replace);
     bool threw = false;
     try { s.flush(); }
-    catch (const StoreException& e) { threw = (e.code == "CGW-FW-0102"); }
+    catch (const StoreException& e) { threw = (e.code == "CCU-FW-0102"); }
     assert(threw);
     // Key remains dirty (re-staged).
     assert(s.isDirty("k"));

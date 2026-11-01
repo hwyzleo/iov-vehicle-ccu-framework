@@ -5,7 +5,7 @@
 #include <vector>
 #include <utility>
 
-namespace cgw {
+namespace ccu {
 namespace fw {
 namespace config {
 
@@ -26,4 +26,4 @@ public:
 
 } // namespace config
 } // namespace fw
-} // namespace cgw
+} // namespace ccu

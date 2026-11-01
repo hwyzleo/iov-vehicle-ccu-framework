@@ -5,8 +5,8 @@
 #include <iostream>
 #include <string>
 
-using namespace cgw::fw::config;
-using cgw::fw::config::detail::SnapshotImpl;
+using namespace ccu::fw::config;
+using ccu::fw::config::detail::SnapshotImpl;
 
 static NodePtr scalar(const std::string& s) { return ConfigNode::makeScalar(s); }
 static NodePtr nullNode() { return ConfigNode::makeNull(); }
@@ -68,7 +68,7 @@ void test_explicit_null_present_but_unreadable() {
     assert(s.has("diag.disabled"));          // explicit null counts as present
     bool threw = false;
     try { s.getInt64("diag.disabled"); } catch (const ConfigException& e) {
-        threw = true; assert(e.code == "CGW-FW-0004");
+        threw = true; assert(e.code == "CCU-FW-0004");
     }
     assert(threw);
     std::cout << "  [PASS] test_explicit_null_present_but_unreadable" << std::endl;
@@ -79,7 +79,7 @@ void test_missing_key_throws_0003() {
     assert(!s.has("common.log.nope"));
     bool threw = false;
     try { s.getString("common.log.nope"); } catch (const ConfigException& e) {
-        threw = true; assert(e.code == "CGW-FW-0003");
+        threw = true; assert(e.code == "CCU-FW-0003");
     }
     assert(threw);
     std::cout << "  [PASS] test_missing_key_throws_0003" << std::endl;
@@ -89,13 +89,13 @@ void test_type_mismatch_throws_0004() {
     SnapshotImpl s(buildSample());
     bool threw = false;
     try { s.getInt64("common.log.level"); } catch (const ConfigException& e) {
-        threw = true; assert(e.code == "CGW-FW-0004");
+        threw = true; assert(e.code == "CCU-FW-0004");
     }
     assert(threw);
     // vector requested on scalar
     threw = false;
     try { s.getStringVec("common.log.level"); } catch (const ConfigException& e) {
-        threw = true; assert(e.code == "CGW-FW-0004");
+        threw = true; assert(e.code == "CCU-FW-0004");
     }
     assert(threw);
     std::cout << "  [PASS] test_type_mismatch_throws_0004" << std::endl;

@@ -9,15 +9,15 @@
 #include <string>
 #include <vector>
 
-using namespace cgw::fw::someip;
-using cgwtest::makeTestConfig;
-using cgwtest::makeTestRuntime;
+using namespace ccu::fw::someip;
+using ccutest::makeTestConfig;
+using ccutest::makeTestRuntime;
 
 namespace {
 
 // Helper: start a runtime and offer a provider with a single echo method.
 struct EchoFixture {
-    cgwtest::someip::detail::TestRuntimeHandle h;
+    ccutest::someip::detail::TestRuntimeHandle h;
     Provider provider;
     Client client;
     EchoFixture(const std::string& app)
@@ -34,11 +34,11 @@ void test_offer_requires_running() {
     p.registerMethod(0x0001, [](const RequestContext&, PayloadView) {
         return MethodResult::ok({});
     });
-    CGW_EXPECT_THROW_CODE(p.offer(), "CGW-FW-0301");
+    CCU_EXPECT_THROW_CODE(p.offer(), "CCU-FW-0301");
     h.runtime.start();
     p.offer();  // now ok
     assert(p.offering());
-    CGW_PASS("test_offer_requires_running");
+    CCU_PASS("test_offer_requires_running");
 }
 
 void test_register_before_offer() {
@@ -47,11 +47,11 @@ void test_register_before_offer() {
     auto p = h.runtime.createProvider({0x1110, 0x0001}, {1, 0});
     p.offer();
     // registerMethod after offer is rejected (CR-005 §6).
-    CGW_EXPECT_THROW_CODE(
+    CCU_EXPECT_THROW_CODE(
         p.registerMethod(0x0001, [](const RequestContext&, PayloadView) {
             return MethodResult::ok({});
-        }), "CGW-FW-0302");
-    CGW_PASS("test_register_before_offer");
+        }), "CCU-FW-0302");
+    CCU_PASS("test_register_before_offer");
 }
 
 void test_duplicate_method() {
@@ -61,20 +61,20 @@ void test_duplicate_method() {
     p.registerMethod(0x0001, [](const RequestContext&, PayloadView) {
         return MethodResult::ok({});
     });
-    CGW_EXPECT_THROW_CODE(
+    CCU_EXPECT_THROW_CODE(
         p.registerMethod(0x0001, [](const RequestContext&, PayloadView) {
             return MethodResult::ok({});
-        }), "CGW-FW-0302");
+        }), "CCU-FW-0302");
     // Reserved/out-of-range method id.
-    CGW_EXPECT_THROW_CODE(
+    CCU_EXPECT_THROW_CODE(
         p.registerMethod(0x0000, [](const RequestContext&, PayloadView) {
             return MethodResult::ok({});
-        }), "CGW-FW-0302");
-    CGW_EXPECT_THROW_CODE(
+        }), "CCU-FW-0302");
+    CCU_EXPECT_THROW_CODE(
         p.registerMethod(0x8000, [](const RequestContext&, PayloadView) {
             return MethodResult::ok({});
-        }), "CGW-FW-0302");
-    CGW_PASS("test_duplicate_method");
+        }), "CCU-FW-0302");
+    CCU_PASS("test_duplicate_method");
 }
 
 void test_method_dispatch_and_response() {
@@ -99,7 +99,7 @@ void test_method_dispatch_and_response() {
     assert(r.success);
     assert(r.response.size() == 2);
     assert(r.response[0] == 'h' && r.response[1] == 'i');
-    CGW_PASS("test_method_dispatch_and_response");
+    CCU_PASS("test_method_dispatch_and_response");
 }
 
 void test_unregistered_method_error() {
@@ -114,7 +114,7 @@ void test_unregistered_method_error() {
     auto r = f.client.call(0x0002, PayloadView{nullptr, 0});
     assert(!r.success);
     assert(r.code.find("SOMEIP/") == 0);
-    CGW_PASS("test_unregistered_method_error");
+    CCU_PASS("test_unregistered_method_error");
 }
 
 void test_handler_exception_maps_0307() {
@@ -126,8 +126,8 @@ void test_handler_exception_maps_0307() {
     f.client.requestService();
     auto r = f.client.call(0x0001, PayloadView{nullptr, 0});
     assert(!r.success);
-    assert(r.code == "CGW-FW-0307");
-    CGW_PASS("test_handler_exception_maps_0307");
+    assert(r.code == "CCU-FW-0307");
+    CCU_PASS("test_handler_exception_maps_0307");
 }
 
 void test_method_error_response() {
@@ -140,7 +140,7 @@ void test_method_error_response() {
     auto r = f.client.call(0x0001, PayloadView{nullptr, 0});
     assert(!r.success);
     assert(r.code == "SOMEIP/17");  // 0x11 == 17
-    CGW_PASS("test_method_error_response");
+    CCU_PASS("test_method_error_response");
 }
 
 void test_event_offer_notify() {
@@ -162,9 +162,9 @@ void test_event_offer_notify() {
     assert(received[0].size() == 3 && received[0][0] == 'A');
     // stopOfferEvent then notify fails.
     f.provider.stopOfferEvent(0x8001);
-    CGW_EXPECT_THROW_CODE(
-        f.provider.notify(0x8001, PayloadView{nullptr, 0}), "CGW-FW-0308");
-    CGW_PASS("test_event_offer_notify");
+    CCU_EXPECT_THROW_CODE(
+        f.provider.notify(0x8001, PayloadView{nullptr, 0}), "CCU-FW-0308");
+    CCU_PASS("test_event_offer_notify");
 }
 
 void test_notify_not_offered() {
@@ -172,13 +172,13 @@ void test_notify_not_offered() {
     f.provider.offer();
     f.client.requestService();
     // Event not offered -> 0308.
-    CGW_EXPECT_THROW_CODE(
-        f.provider.notify(0x8001, PayloadView{nullptr, 0}), "CGW-FW-0308");
+    CCU_EXPECT_THROW_CODE(
+        f.provider.notify(0x8001, PayloadView{nullptr, 0}), "CCU-FW-0308");
     // Provider not offering -> 0308.
     auto p2 = f.h.runtime.createProvider({0x1111, 0x0001}, {1, 0});
-    CGW_EXPECT_THROW_CODE(
-        p2.notify(0x8001, PayloadView{nullptr, 0}), "CGW-FW-0308");
-    CGW_PASS("test_notify_not_offered");
+    CCU_EXPECT_THROW_CODE(
+        p2.notify(0x8001, PayloadView{nullptr, 0}), "CCU-FW-0308");
+    CCU_PASS("test_notify_not_offered");
 }
 
 void test_payload_validation_on_notify() {
@@ -190,14 +190,14 @@ void test_payload_validation_on_notify() {
     p.offer();
     p.offerEvent(0x8001, 0x0001, EventOptions{});
     Payload big{1, 2, 3, 4, 5};  // 5 bytes > 4 limit
-    CGW_EXPECT_THROW_CODE(
-        p.notify(0x8001, PayloadView{big.data(), big.size()}), "CGW-FW-0306");
+    CCU_EXPECT_THROW_CODE(
+        p.notify(0x8001, PayloadView{big.data(), big.size()}), "CCU-FW-0306");
     // Non-zero length null pointer -> 0306.
-    CGW_EXPECT_THROW_CODE(
-        p.notify(0x8001, PayloadView{nullptr, 1}), "CGW-FW-0306");
+    CCU_EXPECT_THROW_CODE(
+        p.notify(0x8001, PayloadView{nullptr, 1}), "CCU-FW-0306");
     // Empty payload is valid.
     p.notify(0x8001, PayloadView{nullptr, 0});
-    CGW_PASS("test_payload_validation_on_notify");
+    CCU_PASS("test_payload_validation_on_notify");
 }
 
 void test_stop_offer_idempotent() {
@@ -212,7 +212,7 @@ void test_stop_offer_idempotent() {
     // Re-offer is allowed after stopOffer.
     f.provider.offer();
     assert(f.provider.offering());
-    CGW_PASS("test_stop_offer_idempotent");
+    CCU_PASS("test_stop_offer_idempotent");
 }
 
 void test_binary_safe_payload() {
@@ -229,7 +229,7 @@ void test_binary_safe_payload() {
     auto r = f.client.call(0x0001, PayloadView{req.data(), req.size()});
     assert(r.success);
     assert(r.response == req);
-    CGW_PASS("test_binary_safe_payload");
+    CCU_PASS("test_binary_safe_payload");
 }
 
 }  // namespace

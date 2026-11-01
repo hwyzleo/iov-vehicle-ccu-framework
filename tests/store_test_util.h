@@ -10,7 +10,7 @@
 #include <string>
 #include <unistd.h>
 
-namespace cgwtest {
+namespace ccutest {
 
 namespace fs = std::filesystem;
 
@@ -22,7 +22,7 @@ struct TempDir {
         auto base = fs::temp_directory_path();
         static std::atomic<unsigned long> counter{0};
         std::random_device rd;
-        std::string name = "cgw-store-test-" + std::to_string(::getpid()) +
+        std::string name = "ccu-store-test-" + std::to_string(::getpid()) +
                            "-" + std::to_string(++counter) + "-" +
                            std::to_string(rd());
         path = base / name;
@@ -72,4 +72,4 @@ struct TempDir {
     }
 };
 
-} // namespace cgwtest
+} // namespace ccutest

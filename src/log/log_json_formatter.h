@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-namespace cgw {
+namespace ccu {
 namespace fw {
 namespace log {
 
@@ -19,4 +19,4 @@ private:
 
 } // namespace log
 } // namespace fw
-} // namespace cgw
+} // namespace ccu

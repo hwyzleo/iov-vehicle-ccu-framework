@@ -5,8 +5,8 @@
 #include <iostream>
 #include <string>
 
-using namespace cgw::fw::config;
-using cgwtest::TempDir;
+using namespace ccu::fw::config;
+using ccutest::TempDir;
 
 // Load from a single root containing common.yaml; cwd is an empty temp dir.
 static std::shared_ptr<const ConfigSnapshot>
@@ -37,41 +37,41 @@ void test_valid_log_config() {
 }
 
 void test_invalid_schema_version() {
-    assert(throwsCode("CGW-FW-0004",
+    assert(throwsCode("CCU-FW-0004",
         "common:\n  log:\n    schema_version: 2\n    level: INFO\n"));
     std::cout << "  [PASS] test_invalid_schema_version" << std::endl;
 }
 
 void test_invalid_level() {
-    assert(throwsCode("CGW-FW-0004",
+    assert(throwsCode("CCU-FW-0004",
         "common:\n  log:\n    schema_version: 1\n    level: VERBOSE\n"));
     std::cout << "  [PASS] test_invalid_level" << std::endl;
 }
 
 void test_invalid_queue_size() {
-    assert(throwsCode("CGW-FW-0004",
+    assert(throwsCode("CCU-FW-0004",
         "common:\n  log:\n    schema_version: 1\n    level: INFO\n"
         "    async:\n      queue_size: 0\n"));
     std::cout << "  [PASS] test_invalid_queue_size" << std::endl;
 }
 
 void test_file_enabled_root_missing() {
-    assert(throwsCode("CGW-FW-0003",
+    assert(throwsCode("CCU-FW-0003",
         "common:\n  log:\n    schema_version: 1\n    level: INFO\n"
         "    file:\n      enabled: true\n"));
     std::cout << "  [PASS] test_file_enabled_root_missing" << std::endl;
 }
 
 void test_file_budget_violation() {
-    assert(throwsCode("CGW-FW-0004",
+    assert(throwsCode("CCU-FW-0004",
         "common:\n  log:\n    schema_version: 1\n    level: INFO\n"
-        "    file:\n      enabled: true\n      root: /tmp/cgw\n"
+        "    file:\n      enabled: true\n      root: /tmp/ccu\n"
         "      max_file_size_mb: 30\n      max_files: 5\n      total_budget_mb: 100\n"));
     std::cout << "  [PASS] test_file_budget_violation" << std::endl;
 }
 
 void test_payload_max_bytes_unlimited() {
-    assert(throwsCode("CGW-FW-0004",
+    assert(throwsCode("CCU-FW-0004",
         "common:\n  log:\n    schema_version: 1\n    level: INFO\n"
         "    redact:\n      payload_max_bytes: 0\n"));
     std::cout << "  [PASS] test_payload_max_bytes_unlimited" << std::endl;
@@ -89,7 +89,7 @@ class SecOperationValidator : public Validator {
 public:
     void validate(const ConfigSnapshot& snapshot) const override {
         if (!snapshot.has("sec.operation")) {
-            throw ConfigException("CGW-FW-0003",
+            throw ConfigException("CCU-FW-0003",
                 "sec.operation is required", "", "sec.operation");
         }
     }
@@ -103,7 +103,7 @@ void test_service_validator_registered() {
         root.writeFile("common.yaml", "common: {}\n");
         bool threw = false;
         try { Config::load("sec", LoadOptions{{root.path}, TempDir().path}); }
-        catch (const ConfigException& e) { threw = (e.code == "CGW-FW-0003"); }
+        catch (const ConfigException& e) { threw = (e.code == "CCU-FW-0003"); }
         assert(threw);
     }
     // present -> ok
@@ -122,7 +122,7 @@ void test_required_common_missing_0001() {
     TempDir root; // no common.yaml
     bool threw = false;
     try { Config::load("diag", LoadOptions{{root.path}, TempDir().path}); }
-    catch (const ConfigException& e) { threw = (e.code == "CGW-FW-0001"); }
+    catch (const ConfigException& e) { threw = (e.code == "CCU-FW-0001"); }
     assert(threw);
     std::cout << "  [PASS] test_required_common_missing_0001" << std::endl;
 }
@@ -132,7 +132,7 @@ void test_yaml_syntax_error_0002() {
     root.writeFile("common.yaml", "common: [unclosed\n");
     bool threw = false;
     try { Config::load("diag", LoadOptions{{root.path}, TempDir().path}); }
-    catch (const ConfigException& e) { threw = (e.code == "CGW-FW-0002"); }
+    catch (const ConfigException& e) { threw = (e.code == "CCU-FW-0002"); }
     assert(threw);
     std::cout << "  [PASS] test_yaml_syntax_error_0002" << std::endl;
 }
@@ -140,7 +140,7 @@ void test_yaml_syntax_error_0002() {
 void test_invalid_service_name_0004() {
     bool threw = false;
     try { Config::load("../bad", LoadOptions{}); }
-    catch (const ConfigException& e) { threw = (e.code == "CGW-FW-0004"); }
+    catch (const ConfigException& e) { threw = (e.code == "CCU-FW-0004"); }
     assert(threw);
     std::cout << "  [PASS] test_invalid_service_name_0004" << std::endl;
 }
@@ -168,7 +168,7 @@ void test_snapshot_template_getters() {
     // getOr: present but type mismatch -> throws (not default)
     bool threw = false;
     try { snap->getOr<int64_t>("common.log.level", 7); }
-    catch (const ConfigException& e) { threw = (e.code == "CGW-FW-0004"); }
+    catch (const ConfigException& e) { threw = (e.code == "CCU-FW-0004"); }
     assert(threw);
 
     // has / keys

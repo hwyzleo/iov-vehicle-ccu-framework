@@ -9,7 +9,7 @@
 //     Bool      : 1 byte (0/1)
 //     StringVec : u32 LE count + (u32 len + bytes)*
 //     Int64Vec  : u32 LE count + 8 bytes*count
-// load<T> verifies magic/version/typeTag; mismatch -> CGW-FW-0104.
+// load<T> verifies magic/version/typeTag; mismatch -> CCU-FW-0104.
 
 #include "store_types.h"
 #include "store_error_formatter.h"
@@ -18,7 +18,7 @@
 #include <cstring>
 #include <stdexcept>
 
-namespace cgw {
+namespace ccu {
 namespace fw {
 namespace store {
 namespace detail {
@@ -39,8 +39,8 @@ enum class TypeTag : uint16_t {
 
 void fail104(const std::string& reason) {
     throw StoreException(
-        "CGW-FW-0104",
-        StoreErrorFormatter::format("CGW-FW-0104", reason, "", "", "", "decode"),
+        "CCU-FW-0104",
+        StoreErrorFormatter::format("CCU-FW-0104", reason, "", "", "", "decode"),
         "", "", "", "decode");
 }
 
@@ -210,4 +210,4 @@ std::vector<int64_t> decodeInt64Vec(const std::vector<uint8_t>& b) {
 } // namespace detail
 } // namespace store
 } // namespace fw
-} // namespace cgw
+} // namespace ccu

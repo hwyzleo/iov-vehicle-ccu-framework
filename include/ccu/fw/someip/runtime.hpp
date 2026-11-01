@@ -1,4 +1,4 @@
-// cgw-framework-someip - Runtime / Application public API (CR-005 §5).
+// ccu-framework-someip - Runtime / Application public API (CR-005 §5).
 //
 // SomeIpRuntime owns the per-process SOME/IP Application: a single application
 // identity, the controlled backend and the Executor. State machine:
@@ -10,16 +10,16 @@
 // routing mode is explicitly selected (external manager or a single embedded
 // owner); the framework SHALL NOT auto-fallback and create multiple routing
 // owners on the same host (CR-005 §5). The external routing manager is a
-// platform stack process, NOT a CGW framework business daemon (CR-005 §1).
+// platform stack process, NOT a CCU framework business daemon (CR-005 §1).
 #pragma once
 
-#include "cgw/fw/someip/client.hpp"
-#include "cgw/fw/someip/provider.hpp"
-#include "cgw/fw/someip/types.hpp"
+#include "ccu/fw/someip/client.hpp"
+#include "ccu/fw/someip/provider.hpp"
+#include "ccu/fw/someip/types.hpp"
 
 #include <memory>
 
-namespace cgw::fw::someip {
+namespace ccu::fw::someip {
 
 namespace detail { class RuntimeImpl; }
 
@@ -47,14 +47,14 @@ public:
 
     // Construct a Runtime with the given config and optional Executor. If no
     // executor is given, a bounded worker pool is used (CR-005 §11). Duplicate
-    // application identity before start yields CGW-FW-0302 (CR-005 §5). An
+    // application identity before start yields CCU-FW-0302 (CR-005 §5). An
     // optional DiagnosticsSink MAY be injected; the default is no-op (§13).
     static SomeIpRuntime create(const SomeIpConfig& config,
                                 std::shared_ptr<Executor> executor = {},
                                 std::shared_ptr<DiagnosticsSink> diag = {});
 
     // Move the state machine Created -> Starting -> Running. Returns to Created
-    // (and throws CGW-FW-0301) on init/start failure (CR-005 §5/§12).
+    // (and throws CCU-FW-0301) on init/start failure (CR-005 §5/§12).
     void start();
 
     // Move to Stopping -> Stopped. Rejects new operations, withdraws
@@ -68,8 +68,8 @@ public:
     RuntimeState state() const;
 
     // Create a Provider/Client for a service key and interface version. IDs and
-    // versions are validated; conflicts return CGW-FW-0302 (CR-005 §5/§6/§7).
-    // Resource limits (maxProviders/maxClients) are enforced (CGW-FW-0309).
+    // versions are validated; conflicts return CCU-FW-0302 (CR-005 §5/§6/§7).
+    // Resource limits (maxProviders/maxClients) are enforced (CCU-FW-0309).
     Provider createProvider(ServiceKey key, InterfaceVersion version);
     Client createClient(ServiceKey key, InterfaceVersion version);
 
@@ -83,4 +83,4 @@ private:
         : m_impl(std::move(impl)) {}
 };
 
-}  // namespace cgw::fw::someip
+}  // namespace ccu::fw::someip

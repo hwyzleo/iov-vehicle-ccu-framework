@@ -1,7 +1,7 @@
 #include "config_yaml_parser.h"
 #include <yaml-cpp/yaml.h>
 
-namespace cgw {
+namespace ccu {
 namespace fw {
 namespace config {
 
@@ -42,7 +42,7 @@ NodePtr YamlParser::parse(const std::string& text,
         root = YAML::Load(text);
     } catch (const YAML::Exception& e) {
         throw ConfigException(
-            "CGW-FW-0002",
+            "CCU-FW-0002",
             "YAML parse error: " + std::string(e.what()),
             sourcePath.string(),
             "");
@@ -57,4 +57,4 @@ NodePtr YamlParser::parse(const std::string& text,
 
 } // namespace config
 } // namespace fw
-} // namespace cgw
+} // namespace ccu

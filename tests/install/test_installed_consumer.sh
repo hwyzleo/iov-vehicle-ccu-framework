@@ -3,10 +3,10 @@
 # test_installed_consumer.sh - CR-006 §8/§9 integration test.
 #
 # End-to-end verification of the installed-package consumer contract, fully
-# isolated from the CGW-FW source/build tree:
+# isolated from the CCU-FW source/build tree:
 #   1. stage a controlled yaml-cpp TARGET dependency prefix (HOST).
 #   2. configure + build the five framework targets with a clean /usr prefix.
-#   3. install cgw-framework-sdk and cgw-framework-runtime to DESTDIR staging.
+#   3. install ccu-framework-sdk and ccu-framework-runtime to DESTDIR staging.
 #   4. verify SDK file set, runtime empty set, no Unspecified component.
 #   5. build+link+run the independent consumer against SDK + dep prefixes only.
 #   6. relocation: move the SDK staging, reconfigure+build+run the consumer.
@@ -34,7 +34,7 @@ pass() { echo "test_installed_consumer: ok $*"; }
 bail() { echo "test_installed_consumer: FAIL $*" >&2; exit 1; }
 
 # ---- 1. stage controlled yaml-cpp dependency ----
-CGW_DEP_STAGING="${DEP_STAGING}" bash "${SRC_DIR}/scripts/stage-yaml-cpp.sh" >/dev/null \
+CCU_DEP_STAGING="${DEP_STAGING}" bash "${SRC_DIR}/scripts/stage-yaml-cpp.sh" >/dev/null \
     || bail "yaml-cpp staging failed"
 [[ -f "${DEP_STAGING}/usr/lib/cmake/yaml-cpp/yaml-cppConfig.cmake" ]] \
     || bail "staged yaml-cpp config missing"
@@ -44,29 +44,29 @@ cmake -S "${SRC_DIR}" -B "${FW_BUILD}" \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_INSTALL_PREFIX=/usr \
     -DCMAKE_PREFIX_PATH="${DEP_STAGING}/usr" \
-    -DCGW_FW_HASH_SANITIZE=OFF \
-    -DCGW_FW_SOMEIP_SANITIZE=OFF \
+    -DCCU_FW_HASH_SANITIZE=OFF \
+    -DCCU_FW_SOMEIP_SANITIZE=OFF \
     >/dev/null 2>&1 || bail "framework configure failed"
 
 cmake --build "${FW_BUILD}" --target \
-    cgw-framework-config cgw-framework-log cgw-framework-store \
-    cgw-framework-hash cgw-framework-someip -j \
+    ccu-framework-config ccu-framework-log ccu-framework-store \
+    ccu-framework-hash ccu-framework-someip -j \
     >/dev/null 2>&1 || bail "framework build failed"
 
 # ---- 3. install SDK + runtime to DESTDIR staging ----
-DESTDIR="${SDK_STAGE}" cmake --install "${FW_BUILD}" --component cgw-framework-sdk >/dev/null \
+DESTDIR="${SDK_STAGE}" cmake --install "${FW_BUILD}" --component ccu-framework-sdk >/dev/null \
     || bail "SDK install failed"
-DESTDIR="${RT_STAGE}" cmake --install "${FW_BUILD}" --component cgw-framework-runtime >/dev/null \
+DESTDIR="${RT_STAGE}" cmake --install "${FW_BUILD}" --component ccu-framework-runtime >/dev/null \
     || bail "runtime install failed"
 
 SDK_USR="${SDK_STAGE}/usr"
 
 # ---- 4. file-set checks ----
 for c in config log store hash someip; do
-    [[ -f "${SDK_USR}/lib/libcgw-framework-${c}.a" ]] || bail "SDK missing libcgw-framework-${c}.a"
+    [[ -f "${SDK_USR}/lib/libccu-framework-${c}.a" ]] || bail "SDK missing libccu-framework-${c}.a"
 done
-[[ -f "${SDK_USR}/lib/cmake/CGWFramework/CGWFrameworkConfig.cmake" ]] || bail "SDK missing Config"
-[[ -f "${SDK_USR}/lib/cmake/CGWFramework/CGWFrameworkTargets.cmake" ]] || bail "SDK missing Targets"
+[[ -f "${SDK_USR}/lib/cmake/CCUFramework/CCUFrameworkConfig.cmake" ]] || bail "SDK missing Config"
+[[ -f "${SDK_USR}/lib/cmake/CCUFramework/CCUFrameworkTargets.cmake" ]] || bail "SDK missing Targets"
 rt_count=0
 if [[ -d "${RT_STAGE}" ]]; then
     rt_count=$( { find "${RT_STAGE}" -type f 2>/dev/null || true; } | wc -l | tr -d ' ')

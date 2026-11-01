@@ -1,7 +1,7 @@
-# cgw-framework.pc.in - per-component pkg-config template (CR-006 §4)
+# ccu-framework.pc.in - per-component pkg-config template (CR-006 §4)
 # Generated once per component via configure_file(@ONLY). The prefix is the
 # configured install prefix (standard pkg-config convention); CMake Config/Targets
-# are the relocatable consumption path (see CGWFrameworkConfig.cmake.in).
+# are the relocatable consumption path (see CCUFrameworkConfig.cmake.in).
 prefix=@CMAKE_INSTALL_PREFIX@
 exec_prefix=${prefix}
 libdir=${exec_prefix}/@CMAKE_INSTALL_LIBDIR@

@@ -2,8 +2,8 @@
 #include <cassert>
 #include <iostream>
 
-using namespace cgw::fw::store;
-namespace d = cgw::fw::store::detail;
+using namespace ccu::fw::store;
+namespace d = ccu::fw::store::detail;
 
 void test_string_roundtrip() {
     std::string v = "hello \xe4\xb8\xad world"; // UTF-8
@@ -60,7 +60,7 @@ void test_type_mismatch() {
         d::decodeString(b); // stored as Int64, read as String
     } catch (const StoreException& e) {
         threw = true;
-        assert(e.code == "CGW-FW-0104");
+        assert(e.code == "CCU-FW-0104");
     }
     assert(threw);
     std::cout << "  [PASS] test_type_mismatch" << std::endl;
@@ -74,7 +74,7 @@ void test_bad_magic() {
         d::decodeInt64(b);
     } catch (const StoreException& e) {
         threw = true;
-        assert(e.code == "CGW-FW-0104");
+        assert(e.code == "CCU-FW-0104");
     }
     assert(threw);
     std::cout << "  [PASS] test_bad_magic" << std::endl;
@@ -88,7 +88,7 @@ void test_truncated() {
         d::decodeString(b);
     } catch (const StoreException& e) {
         threw = true;
-        assert(e.code == "CGW-FW-0104");
+        assert(e.code == "CCU-FW-0104");
     }
     assert(threw);
     std::cout << "  [PASS] test_truncated" << std::endl;
@@ -103,7 +103,7 @@ void test_corrupted_length() {
         d::decodeString(b);
     } catch (const StoreException& e) {
         threw = true;
-        assert(e.code == "CGW-FW-0104");
+        assert(e.code == "CCU-FW-0104");
     }
     assert(threw);
     std::cout << "  [PASS] test_corrupted_length" << std::endl;

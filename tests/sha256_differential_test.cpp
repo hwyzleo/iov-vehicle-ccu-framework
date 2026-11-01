@@ -1,5 +1,5 @@
 // tests/sha256_differential_test.cpp - differential & cross-platform testing
-// for cgw-framework-hash (CGW-FW-DSN-CR-004 §9.3).
+// for ccu-framework-hash (CCU-FW-DSN-CR-004 §9.3).
 //
 // Uses the OpenSSL CLI as a trusted oracle. The oracle is a TEST-ONLY
 // dependency: it MUST NOT become a product runtime dependency (CR-004 §9.3/§11).
@@ -9,7 +9,7 @@
 // PATH the test is SKIPPED (returns 0) so the suite stays green on minimal
 // hosts while still running fully where the oracle exists.
 
-#include "cgw/fw/hash/sha256.hpp"
+#include "ccu/fw/hash/sha256.hpp"
 
 #include <cassert>
 #include <cstdint>
@@ -24,7 +24,7 @@
 #include <unistd.h>
 #include <vector>
 
-using namespace cgw::fw::hash;
+using namespace ccu::fw::hash;
 
 namespace {
 
@@ -42,7 +42,7 @@ bool opensslAvailable() {
 // Digest `data`/`size` via the OpenSSL CLI oracle, returning lowercase hex.
 // Returns empty string on failure.
 std::string oracleHex(const std::uint8_t* data, std::size_t size) {
-    char path[] = "/tmp/cgw-hash-or-XXXXXX";
+    char path[] = "/tmp/ccu-hash-or-XXXXXX";
     int fd = ::mkstemp(path);
     if (fd < 0) return "";
     {

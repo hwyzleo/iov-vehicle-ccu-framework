@@ -1,19 +1,19 @@
-// cgw-framework-someip - Provider public API (CR-005 §6).
+// ccu-framework-someip - Provider public API (CR-005 §6).
 //
 // A Provider offers a Service+Instance with a declared InterfaceVersion,
 // registers Method handlers and offers/notifies Events. At most one response is
 // sent per request; handler exceptions map to a SOME/IP error response
-// (CGW-FW-0307). registerMethod MUST complete before offer(). stopOffer stops
+// (CCU-FW-0307). registerMethod MUST complete before offer(). stopOffer stops
 // new dispatch, waits (bounded) for in-flight handlers, then withdraws events
 // and the service (CR-005 §6/§11).
 #pragma once
 
-#include "cgw/fw/someip/types.hpp"
+#include "ccu/fw/someip/types.hpp"
 
 #include <functional>
 #include <memory>
 
-namespace cgw::fw::someip {
+namespace ccu::fw::someip {
 
 class SomeIpRuntime;  // friend: constructs Provider instances
 
@@ -29,7 +29,7 @@ public:
     Provider() = default;
 
     // Register a Method handler. MUST be called before offer(). Duplicate,
-    // reserved or interface-conflicting IDs return CGW-FW-0302 (CR-005 §6).
+    // reserved or interface-conflicting IDs return CCU-FW-0302 (CR-005 §6).
     void registerMethod(MethodId id, MethodHandler handler);
 
     // Offer the service/instance on SOME/IP-SD. After offer, incoming requests
@@ -47,7 +47,7 @@ public:
     void stopOfferEvent(EventId event);
 
     // Notify all subscribers of an event with the given payload. Fails with
-    // CGW-FW-0308 if the event is not offered or notify dispatch fails
+    // CCU-FW-0308 if the event is not offered or notify dispatch fails
     // (CR-005 §6/§8). PayloadView{nullptr,0} is a valid empty notify.
     void notify(EventId event, PayloadView payload);
 
@@ -61,4 +61,4 @@ private:
         : m_impl(std::move(impl)) {}
 };
 
-}  // namespace cgw::fw::someip
+}  // namespace ccu::fw::someip

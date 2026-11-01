@@ -6,7 +6,7 @@
 #include <string>
 #include <string_view>
 
-namespace cgw {
+namespace ccu {
 namespace fw {
 namespace config {
 
@@ -33,7 +33,7 @@ struct ConfigEntry {
 // first-match (1,3): only the first existing regular file is taken.
 // ordered-overlay (5): every existing <root>/<svc>.yaml is appended in index order.
 // A found candidate that is not a regular file / unreadable / read-fails yields
-// CGW-FW-0001 immediately, without falling back to later candidates.
+// CCU-FW-0001 immediately, without falling back to later candidates.
 class PathResolver {
 public:
     // Validate service name: non-empty, no path separators, no '..', not ".".
@@ -50,7 +50,7 @@ public:
     static std::filesystem::path normalizeCwd(const std::filesystem::path& cwd);
 
     // Six-stage resolve. configRoots and cwd must be pre-normalized.
-    // Throws ConfigException(CGW-FW-0001) for required-missing or found-but-invalid.
+    // Throws ConfigException(CCU-FW-0001) for required-missing or found-but-invalid.
     static std::vector<ConfigEntry>
     resolveAll(std::string_view service,
                const std::vector<std::filesystem::path>& configRoots,
@@ -59,4 +59,4 @@ public:
 
 } // namespace config
 } // namespace fw
-} // namespace cgw
+} // namespace ccu

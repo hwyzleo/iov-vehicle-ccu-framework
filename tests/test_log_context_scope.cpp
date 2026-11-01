@@ -4,7 +4,7 @@
 #include <iostream>
 #include <thread>
 
-using namespace cgw::fw::log;
+using namespace ccu::fw::log;
 
 void test_context_scope_basic() {
     assert(ContextScope::current() == nullptr);

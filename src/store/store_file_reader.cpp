@@ -5,9 +5,11 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include <cerrno>
+#include <cstring>
 #include <system_error>
 
-namespace cgw {
+namespace ccu {
 namespace fw {
 namespace store {
 
@@ -31,14 +33,14 @@ FileReader::read(const fs::path& path, std::size_t maxValueBytes,
     int fd = ::open(path.c_str(), O_RDONLY | O_NOFOLLOW | O_CLOEXEC);
     if (fd < 0) {
         if (errno == ENOENT) {
-            fail("CGW-FW-0105", "final file not found", service, key,
+            fail("CCU-FW-0105", "final file not found", service, key,
                  path.string(), "read");
         }
         if (errno == ELOOP) {
-            fail("CGW-FW-0101", "final file is a symlink (escape prevention)",
+            fail("CCU-FW-0101", "final file is a symlink (escape prevention)",
                  service, key, path.string(), "read");
         }
-        fail("CGW-FW-0102",
+        fail("CCU-FW-0102",
              std::string("cannot open final file: ") + ::strerror(errno),
              service, key, path.string(), "read");
     }
@@ -46,17 +48,17 @@ FileReader::read(const fs::path& path, std::size_t maxValueBytes,
     struct stat st;
     if (::fstat(fd, &st) != 0) {
         ::close(fd);
-        fail("CGW-FW-0102", "cannot stat final file", service, key,
+        fail("CCU-FW-0102", "cannot stat final file", service, key,
              path.string(), "read");
     }
     if (!S_ISREG(st.st_mode)) {
         ::close(fd);
-        fail("CGW-FW-0101", "final path is not a regular file", service, key,
+        fail("CCU-FW-0101", "final path is not a regular file", service, key,
              path.string(), "read");
     }
     if (static_cast<std::size_t>(st.st_size) > maxValueBytes) {
         ::close(fd);
-        fail("CGW-FW-0104", "final file exceeds size limit", service, key,
+        fail("CCU-FW-0104", "final file exceeds size limit", service, key,
              path.string(), "read");
     }
 
@@ -67,7 +69,7 @@ FileReader::read(const fs::path& path, std::size_t maxValueBytes,
         if (n < 0) {
             if (errno == EINTR) continue;
             ::close(fd);
-            fail("CGW-FW-0102",
+            fail("CCU-FW-0102",
                  std::string("read failed: ") + ::strerror(errno), service, key,
                  path.string(), "read");
         }
@@ -81,4 +83,4 @@ FileReader::read(const fs::path& path, std::size_t maxValueBytes,
 
 } // namespace store
 } // namespace fw
-} // namespace cgw
+} // namespace ccu

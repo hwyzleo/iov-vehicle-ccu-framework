@@ -6,12 +6,12 @@
 #include <unordered_map>
 #include <memory>
 
-namespace cgw {
+namespace ccu {
 namespace fw {
 namespace log {
 
 // ============================================================
-// 错误码定义 (CGW-FW-0201~0205)
+// 错误码定义 (CCU-FW-0201~0205)
 // ============================================================
 enum class LogError : uint32_t {
     kOk = 0,
@@ -114,7 +114,7 @@ struct Field {
 };
 
 // ============================================================
-// SOME/IP 上下文（CGW 特有）
+// SOME/IP 上下文（CCU 特有）
 // ============================================================
 struct SomeIpContext {
     std::string service_id;
@@ -125,7 +125,7 @@ struct SomeIpContext {
 };
 
 // ============================================================
-// 诊断上下文（CGW 特有）
+// 诊断上下文（CCU 特有）
 // ============================================================
 struct DiagnosticContext {
     std::string ecu_id;
@@ -163,7 +163,7 @@ struct ConsoleConfig {
 
 struct FileConfig {
     bool enabled = false;
-    std::string root = "/var/log/cgw";
+    std::string root = "/var/log/ccu";
     uint32_t max_file_size_mb = 20;
     uint32_t max_files = 5;
     uint32_t total_budget_mb = 100;
@@ -200,4 +200,4 @@ struct InitResult {
 
 } // namespace log
 } // namespace fw
-} // namespace cgw
+} // namespace ccu

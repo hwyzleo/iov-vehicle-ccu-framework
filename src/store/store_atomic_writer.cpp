@@ -6,11 +6,13 @@
 #include <unistd.h>
 
 #include <atomic>
+#include <cerrno>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <system_error>
 
-namespace cgw {
+namespace ccu {
 namespace fw {
 namespace store {
 
@@ -61,13 +63,13 @@ void AtomicWriter::syncDir(const fs::path& dir, std::string_view service,
                            std::string_view key, std::string_view stage) {
     int dfd = ::open(dir.c_str(), O_RDONLY | O_CLOEXEC);
     if (dfd < 0) {
-        fail("CGW-FW-0102",
+        fail("CCU-FW-0102",
              std::string("cannot open service dir for fsync: ") + ::strerror(errno),
              service, key, dir.string(), stage);
     }
     if (::fsync(dfd) != 0) {
         ::close(dfd);
-        fail("CGW-FW-0102",
+        fail("CCU-FW-0102",
              std::string("directory fsync failed: ") + ::strerror(errno), service,
              key, dir.string(), stage);
     }
@@ -79,7 +81,7 @@ void AtomicWriter::commit(const fs::path& finalPath, const fs::path& serviceDir,
                           const std::vector<uint8_t>& bytes,
                           std::size_t maxValueBytes) {
     if (bytes.size() > maxValueBytes) {
-        fail("CGW-FW-0104", "encoded value exceeds size limit", service, key,
+        fail("CCU-FW-0104", "encoded value exceeds size limit", service, key,
              finalPath.string(), "encode");
     }
 
@@ -97,13 +99,13 @@ void AtomicWriter::commit(const fs::path& finalPath, const fs::path& serviceDir,
                     O_CREAT | O_EXCL | O_WRONLY | O_NOFOLLOW | O_CLOEXEC, 0600);
         if (fd >= 0) break;
         if (errno != EEXIST) {
-            fail("CGW-FW-0102",
+            fail("CCU-FW-0102",
                  std::string("cannot create temp file: ") + ::strerror(errno),
                  service, key, tempStr, "temp-create");
         }
     }
     if (fd < 0) {
-        fail("CGW-FW-0102", "temp file collision exhausted", service, key,
+        fail("CCU-FW-0102", "temp file collision exhausted", service, key,
              tempStr, "temp-create");
     }
 
@@ -116,14 +118,14 @@ void AtomicWriter::commit(const fs::path& finalPath, const fs::path& serviceDir,
 
     if (!writeAll(fd, bytes.data(), bytes.size())) {
         cleanup();
-        fail("CGW-FW-0102",
+        fail("CCU-FW-0102",
              std::string("write failed: ") + ::strerror(errno), service, key,
              tempStr, "write");
     }
 
     if (::fsync(fd) != 0) {
         cleanup();
-        fail("CGW-FW-0102",
+        fail("CCU-FW-0102",
              std::string("temp fsync failed: ") + ::strerror(errno), service,
              key, tempStr, "fsync");
     }
@@ -131,7 +133,7 @@ void AtomicWriter::commit(const fs::path& finalPath, const fs::path& serviceDir,
     if (::close(fd) != 0) {
         fd = -1;
         cleanup();
-        fail("CGW-FW-0102",
+        fail("CCU-FW-0102",
              std::string("temp close failed: ") + ::strerror(errno), service,
              key, tempStr, "fsync");
     }
@@ -140,16 +142,16 @@ void AtomicWriter::commit(const fs::path& finalPath, const fs::path& serviceDir,
     // rename is atomic on the same filesystem.
     if (::rename(tempStr.c_str(), finalPath.c_str()) != 0) {
         cleanup();
-        fail("CGW-FW-0102",
+        fail("CCU-FW-0102",
              std::string("rename failed: ") + ::strerror(errno), service, key,
              finalPath.string(), "rename");
     }
 
     // New value is now visible in memory. If dir fsync fails, durability is
-    // unconfirmed: report CGW-FW-0102 with stage "dir-fsync" (do NOT unlink).
+    // unconfirmed: report CCU-FW-0102 with stage "dir-fsync" (do NOT unlink).
     syncDir(serviceDir, service, key, "dir-fsync");
 }
 
 } // namespace store
 } // namespace fw
-} // namespace cgw
+} // namespace ccu

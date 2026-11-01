@@ -10,15 +10,15 @@
 #include <atomic>
 #include <string>
 
-using namespace cgw::fw::config;
-using cgw::fw::log::LogConfig;
-using cgw::fw::log::LogLevel;
-using cgw::fw::log::logLevelFromString;
-using cgw::fw::log::Logger;
-using cgw::fw::log::InitResult;
-using cgw::fw::log::LogError;
-using cgw::fw::log::FieldValue;
-using cgwtest::TempDir;
+using namespace ccu::fw::config;
+using ccu::fw::log::LogConfig;
+using ccu::fw::log::LogLevel;
+using ccu::fw::log::logLevelFromString;
+using ccu::fw::log::Logger;
+using ccu::fw::log::InitResult;
+using ccu::fw::log::LogError;
+using ccu::fw::log::FieldValue;
+using ccutest::TempDir;
 
 // Build a LogConfig from a config snapshot (host-service injection, US-107).
 static LogConfig buildLogConfig(const ConfigSnapshot& snap) {
@@ -45,7 +45,7 @@ static LogConfig buildLogConfig(const ConfigSnapshot& snap) {
     return lc;
 }
 
-// US-107: config snapshot injected into cgw-framework-log.
+// US-107: config snapshot injected into ccu-framework-log.
 void test_config_to_log_injection() {
     TempDir root;
     root.writeFile("common.yaml",
@@ -65,7 +65,7 @@ void test_config_to_log_injection() {
     assert(lc.module_levels["router"] == LogLevel::kWarn);
     assert(lc.module_levels["tester"] == LogLevel::kInfo);
 
-    InitResult result = Logger::init("cgw-diag", lc);
+    InitResult result = Logger::init("ccu-diag", lc);
     assert(result.error == LogError::kOk);
 
     Logger logger = Logger::get("tester");

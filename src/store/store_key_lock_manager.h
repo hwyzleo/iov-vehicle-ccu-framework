@@ -10,7 +10,7 @@
 #include <string_view>
 #include <unistd.h>
 
-namespace cgw {
+namespace ccu {
 namespace fw {
 namespace store {
 
@@ -48,7 +48,7 @@ class KeyLockManager {
 public:
     KeyLockManager(fs::path serviceDir, std::chrono::milliseconds timeout);
     // Acquire in-process mutex then cross-process flock within the timeout.
-    // Throws CGW-FW-0103 on failure/timeout.
+    // Throws CCU-FW-0103 on failure/timeout.
     std::unique_ptr<LockHandle> acquire(std::string_view key,
                                         std::string_view service);
 private:
@@ -58,4 +58,4 @@ private:
 
 } // namespace store
 } // namespace fw
-} // namespace cgw
+} // namespace ccu

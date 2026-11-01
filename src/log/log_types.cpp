@@ -2,7 +2,7 @@
 #include <algorithm>
 #include <cctype>
 
-namespace cgw {
+namespace ccu {
 namespace fw {
 namespace log {
 
@@ -65,4 +65,4 @@ const char* logLevelToString(LogLevel level) {
 
 } // namespace log
 } // namespace fw
-} // namespace cgw
+} // namespace ccu

@@ -1,7 +1,7 @@
 // src/someip_backend.h - PRIVATE SomeIpBackend adapter (CR-005 §1/§2/§14).
 //
 // The backend abstracts the controlled SOME/IP stack. It is PRIVATE: only the
-// cgw-framework-someip sources and HOST tests include this header. Public
+// ccu-framework-someip sources and HOST tests include this header. Public
 // headers never mention SomeIpBackend or its concrete type (CR-005 §2/§3).
 //
 // FakeSomeIpBackend is the deterministic, no-network backend for this CR
@@ -11,14 +11,14 @@
 // backend is wired in a follow-up CR (step 2).
 #pragma once
 
-#include "cgw/fw/someip/types.hpp"
+#include "ccu/fw/someip/types.hpp"
 
 #include <chrono>
 #include <cstdint>
 #include <functional>
 #include <memory>
 
-namespace cgw::fw::someip {
+namespace ccu::fw::someip {
 namespace detail {
 
 // Delivered to a Provider's registered dispatcher on an incoming request.
@@ -113,12 +113,12 @@ public:
     void advanceClock(std::chrono::milliseconds ms) override;
 
     // --- Fault injection (test only, CR-005 §14) ---
-    // Force a requested service into Unavailable (calls return CGW-FW-0304).
+    // Force a requested service into Unavailable (calls return CCU-FW-0304).
     void setServiceUnavailable(ServiceKey key, bool unavailable);
     // Force a requested service into VersionMismatch.
     void setVersionMismatch(ServiceKey key, bool mismatched);
     // Fail the next `count` sendRequest calls with a transport failure
-    // (CGW-FW-0305), enabling idempotent retry tests (CR-005 §7/§14).
+    // (CCU-FW-0305), enabling idempotent retry tests (CR-005 §7/§14).
     void injectTransportFailures(int count);
     // Simulate a disconnect: drive Availability to Unavailable and mark all
     // subscriptions for the service as broken (recovery backoff may re-arm).
@@ -139,4 +139,4 @@ private:
 };
 
 }  // namespace detail
-}  // namespace cgw::fw::someip
+}  // namespace ccu::fw::someip

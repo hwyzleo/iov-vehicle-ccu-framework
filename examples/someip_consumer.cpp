@@ -1,12 +1,12 @@
-// examples/someip_consumer.cpp - minimal CGW Provider/Client consumer sample
-// (CGW-FW-DSN-CR-005 §15.4).
+// examples/someip_consumer.cpp - minimal CCU Provider/Client consumer sample
+// (CCU-FW-DSN-CR-005 §15.4).
 //
 // Demonstrates a service acting as both Provider and Client over the controlled
 // (fake) backend: offer a method, discover, call and receive the response. The
 // framework is not a central daemon; the Provider and Client communicate
-// directly (US-504). Links the exported build-tree alias cgw::framework-someip.
+// directly (US-504). Links the exported build-tree alias ccu::framework-someip.
 // This is a sample, NOT a unit test.
-#include "cgw/fw/someip/runtime.hpp"
+#include "ccu/fw/someip/runtime.hpp"
 
 #include <cassert>
 #include <chrono>
@@ -15,10 +15,10 @@
 #include <thread>
 
 int main() {
-    using namespace cgw::fw::someip;
+    using namespace ccu::fw::someip;
 
     SomeIpConfig cfg;
-    cfg.application = "cgw-someip-consumer";
+    cfg.application = "ccu-someip-consumer";
     cfg.callTimeout = std::chrono::milliseconds(1000);
     cfg.discovery.initialBackoff = std::chrono::milliseconds(50);
     cfg.discovery.maxBackoff = std::chrono::milliseconds(500);

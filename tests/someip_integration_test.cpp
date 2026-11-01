@@ -9,16 +9,16 @@
 #include <string>
 #include <vector>
 
-using namespace cgw::fw::someip;
-using cgwtest::makeTestConfig;
-using cgwtest::makeTestRuntime;
-using cgwtest::InlineExecutor;
-using cgwtest::DeferredExecutor;
-using cgwtest::CountingDiagnosticsSink;
+using namespace ccu::fw::someip;
+using ccutest::makeTestConfig;
+using ccutest::makeTestRuntime;
+using ccutest::InlineExecutor;
+using ccutest::DeferredExecutor;
+using ccutest::CountingDiagnosticsSink;
 
 namespace {
 
-// US-504: CGW services communicate directly as Provider/Client; the framework
+// US-504: CCU services communicate directly as Provider/Client; the framework
 // is not a central business daemon (CR-005 §1).
 void test_provider_client_direct_communication() {
     auto h = makeTestRuntime(makeTestConfig("int-direct"));
@@ -41,7 +41,7 @@ void test_provider_client_direct_communication() {
     assert(r.success);
     assert(r.response.size() == 5);
     assert(r.response.back() == 0xFF);
-    CGW_PASS("test_provider_client_direct_communication");
+    CCU_PASS("test_provider_client_direct_communication");
 }
 
 // Multiple clients subscribe to the same event and all receive notifications.
@@ -69,7 +69,7 @@ void test_event_multicast() {
     s1.cancel();
     p.notify(0x8001, PayloadView{nullptr, 0});
     assert(n1 == 2 && n2 == 3);
-    CGW_PASS("test_event_multicast");
+    CCU_PASS("test_event_multicast");
 }
 
 // US-506: disconnect drives Unavailable; recovery restores availability and
@@ -103,7 +103,7 @@ void test_disconnect_recovery_resubscribe() {
     p.notify(0x8001, PayloadView{evt.data(), evt.size()});
     assert(count == 2);
     assert(sub.active());
-    CGW_PASS("test_disconnect_recovery_resubscribe");
+    CCU_PASS("test_disconnect_recovery_resubscribe");
 }
 
 // CR-005 §7/§8: a cancelled subscription SHALL NOT be restored after recovery.
@@ -130,7 +130,7 @@ void test_cancelled_subscription_not_restored() {
     assert(n2 == 0);
     assert(s1.active());
     assert(!s2.active());
-    CGW_PASS("test_cancelled_subscription_not_restored");
+    CCU_PASS("test_cancelled_subscription_not_restored");
 }
 
 // Recovery backoff: the client arms bounded timers and re-requests on each fire
@@ -163,7 +163,7 @@ void test_recovery_backoff_timers() {
     h.backend->advanceClock(std::chrono::milliseconds(40));
     assert(c.availability() == Availability::Available);
     assert(h.backend->pendingTimers() == 0);  // recovery cancelled
-    CGW_PASS("test_recovery_backoff_timers");
+    CCU_PASS("test_recovery_backoff_timers");
 }
 
 // US-507: non-idempotent default no retry; explicit idempotent bounded retry.
@@ -184,7 +184,7 @@ void test_retry_semantics_integration() {
     h.backend->injectTransportFailures(2);
     CallOptions none;
     auto r1 = c.call(0x0001, PayloadView{nullptr, 0}, none);
-    assert(!r1.success && r1.code == "CGW-FW-0305");
+    assert(!r1.success && r1.code == "CCU-FW-0305");
     assert(calls == 0);  // handler never ran (transport failed before dispatch)
 
     // Idempotent: retries past the failures and the handler runs once on success.
@@ -195,7 +195,7 @@ void test_retry_semantics_integration() {
     auto r2 = c.call(0x0001, PayloadView{nullptr, 0}, idem);
     assert(r2.success);
     assert(calls == 1);  // handler ran exactly once (on the successful attempt)
-    CGW_PASS("test_retry_semantics_integration");
+    CCU_PASS("test_retry_semantics_integration");
 }
 
 // CR-005 §9/§13: payload, keys, tokens and seed/key SHALL NOT appear in
@@ -244,23 +244,23 @@ void test_security_no_payload_in_diagnostics() {
         c2.call(0x0001, PayloadView{big.data(), big.size()});
     } catch (const SomeIpException& e) {
         caught = true;
-        assert(e.code == "CGW-FW-0306");
+        assert(e.code == "CCU-FW-0306");
         assert(e.what() != std::string("payload exceeds max bytes"));
         // Message must not contain the secret bytes.
         std::string msg = e.what();
         assert(msg.find("payload exceeds max bytes") != std::string::npos);
     }
     assert(caught);
-    CGW_PASS("test_security_no_payload_in_diagnostics");
+    CCU_PASS("test_security_no_payload_in_diagnostics");
 }
 
 // US-505: Service Registry is the sole addressing source. Validate the current
-// CGW sample addressing (0x1110 / 0x0001 / TCP / 51110) flows consistently
+// CCU sample addressing (0x1110 / 0x0001 / TCP / 51110) flows consistently
 // through config + offer/request/call without the framework re-allocating IDs
 // (CR-005 §8/§14).
 void test_registry_regression_sample() {
     SomeIpConfig cfg = makeTestConfig("int-registry");
-    cfg.registryProfile = "cgw-diag";  // references the Registry deployment entry
+    cfg.registryProfile = "ccu-diag";  // references the Registry deployment entry
     auto h = makeTestRuntime(cfg);
     h.runtime.start();
     // Sample IDs from the unified Service Registry (not hardcoded by framework).
@@ -279,13 +279,13 @@ void test_registry_regression_sample() {
     p2.registerMethod(0x0001, [](const RequestContext&, PayloadView) {
         return MethodResult::ok({});
     });
-    CGW_EXPECT_THROW_CODE(p2.offer(), "CGW-FW-0302");
+    CCU_EXPECT_THROW_CODE(p2.offer(), "CCU-FW-0302");
     // Round-trip with the sample IDs.
     Payload req{0x22, 0xF1, 0x90};
     auto r = c.call(0x0001, PayloadView{req.data(), req.size()});
     assert(r.success);
     assert(r.response == req);
-    CGW_PASS("test_registry_regression_sample");
+    CCU_PASS("test_registry_regression_sample");
 }
 
 // CR-005 §11: resource limits are enforced (subscriptions, providers, clients).
@@ -303,10 +303,10 @@ void test_resource_limits_integration() {
     c.requestService();
     auto s1 = c.subscribe(0x0001, 0x8001, [](const EventContext&, PayloadView) {});
     auto s2 = c.subscribe(0x0001, 0x8002, [](const EventContext&, PayloadView) {});
-    CGW_EXPECT_THROW_CODE(
+    CCU_EXPECT_THROW_CODE(
         c.subscribe(0x0001, 0x8003, [](const EventContext&, PayloadView) {}),
-        "CGW-FW-0309");
-    CGW_PASS("test_resource_limits_integration");
+        "CCU-FW-0309");
+    CCU_PASS("test_resource_limits_integration");
 }
 
 // CR-005 §11: shutdown withdraws and reports Stopping; no leak of timers.
@@ -320,7 +320,7 @@ void test_shutdown_stops_recovery() {
     // After stop the backend is cleared (no pending timers / offered services).
     assert(h.backend->pendingTimers() == 0);
     assert(h.backend->offeredServiceCount() == 0);
-    CGW_PASS("test_shutdown_stops_recovery");
+    CCU_PASS("test_shutdown_stops_recovery");
 }
 
 }  // namespace

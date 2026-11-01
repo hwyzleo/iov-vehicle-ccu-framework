@@ -6,7 +6,7 @@
 #include <memory>
 #include <cstdint>
 
-namespace cgw {
+namespace ccu {
 namespace fw {
 namespace config {
 
@@ -42,4 +42,4 @@ struct ConfigNode {
 
 } // namespace config
 } // namespace fw
-} // namespace cgw
+} // namespace ccu

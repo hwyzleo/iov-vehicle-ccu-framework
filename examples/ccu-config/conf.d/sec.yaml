@@ -1,4 +1,4 @@
-# /etc/cgw/conf.d/sec.yaml - CGW-SEC service configuration
+# /etc/ccu/conf.d/sec.yaml - CCU-SEC service configuration
 sec:
   log:
     level: INFO

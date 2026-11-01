@@ -4,7 +4,7 @@
 #include <ctime>
 #include <cstring>
 
-namespace cgw {
+namespace ccu {
 namespace fw {
 namespace log {
 
@@ -146,4 +146,4 @@ bool StandardFormatter::isCommonField(const std::string& key) {
 
 } // namespace log
 } // namespace fw
-} // namespace cgw
+} // namespace ccu

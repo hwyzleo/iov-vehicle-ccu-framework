@@ -1,12 +1,12 @@
 // tests/sha256_test.cpp - standard vectors, padding/binary boundaries and
-// error handling for cgw-framework-hash (CGW-FW-DSN-CR-004 §9.1/§9.2).
+// error handling for ccu-framework-hash (CCU-FW-DSN-CR-004 §9.1/§9.2).
 //
 // Expected digests were generated with a trusted OpenSSL oracle and are
 // hard-coded here so this test has no runtime dependency on openssl. The
 // differential test (sha256_differential_test.cpp) re-checks against the
 // oracle for fixed and random inputs.
 
-#include "cgw/fw/hash/sha256.hpp"
+#include "ccu/fw/hash/sha256.hpp"
 
 #include <cassert>
 #include <cstdint>
@@ -16,7 +16,7 @@
 #include <string_view>
 #include <vector>
 
-using namespace cgw::fw::hash;
+using namespace ccu::fw::hash;
 
 namespace {
 
@@ -198,7 +198,7 @@ void test_null_nonzero_throws_0401() {
         sha256(ByteView{nullptr, 1});
     } catch (const HashException& e) {
         threw = true;
-        assert(e.code == "CGW-FW-0401");
+        assert(e.code == "CCU-FW-0401");
     }
     assert(threw);
     std::cout << "  [PASS] test_null_nonzero_throws_0401" << std::endl;
@@ -216,7 +216,7 @@ void test_bit_length_overflow_throws_0401() {
         sha256(ByteView{&dummy, static_cast<std::size_t>(huge)});
     } catch (const HashException& e) {
         threw = true;
-        assert(e.code == "CGW-FW-0401");
+        assert(e.code == "CCU-FW-0401");
     }
     assert(threw);
     std::cout << "  [PASS] test_bit_length_overflow_throws_0401" << std::endl;

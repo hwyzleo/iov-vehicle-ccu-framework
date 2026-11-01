@@ -1,11 +1,11 @@
-// cgw-framework-someip - CGW common SOME/IP capability.
-// CGW-FW-DSN-CR-005: unified controlled backend adaptation, Runtime/Application,
+// ccu-framework-someip - CCU common SOME/IP capability.
+// CCU-FW-DSN-CR-005: unified controlled backend adaptation, Runtime/Application,
 // Provider/Client, SOME/IP-SD, Method/Event, config injection, thread resources,
-// CGW-FW-03xx errors and migration tests.
+// CCU-FW-03xx errors and migration tests.
 //
 // Boundary (CR-005 §1/§9/§13):
 //   - Independent in-process C++ static library; no daemon, no Unix socket IPC
-//     wire, no central business broker. CGW services link it on demand and act
+//     wire, no central business broker. CCU services link it on demand and act
 //     directly as SOME/IP Provider/Client.
 //   - config/log are injected by the host; someip does NOT read YAML and does
 //     NOT depend on config/log/store/hash. DiagnosticsSink is optional and
@@ -33,7 +33,7 @@
 #include <string>
 #include <vector>
 
-namespace cgw::fw::someip {
+namespace ccu::fw::someip {
 
 // ============================================================
 // Identifiers (CR-005 §4)
@@ -69,7 +69,7 @@ struct InterfaceVersion {
 
 // Binary-safe payload view; does not rely on a C-string terminator.
 // PayloadView{nullptr, 0} is a valid empty payload; size > 0 && data == nullptr
-// is illegal and yields CGW-FW-0306 (CR-005 §4/§8).
+// is illegal and yields CCU-FW-0306 (CR-005 §4/§8).
 struct PayloadView {
     const std::uint8_t* data{nullptr};
     std::size_t size{0};
@@ -147,12 +147,12 @@ struct MethodResult {
     }
 };
 
-// Client receives a CallResult; code is a stable CGW-FW-03xx or mapped
+// Client receives a CallResult; code is a stable CCU-FW-03xx or mapped
 // SOME/IP error (CR-005 §12). Backend enums/exceptions never leak (CR-005 §12).
 struct CallResult {
     bool success{false};
     Payload response{};
-    std::string code;       // "CGW-FW-0304" / "CGW-FW-0305" / "SOMEIP/0x05" ...
+    std::string code;       // "CCU-FW-0304" / "CCU-FW-0305" / "SOMEIP/0x05" ...
     std::string message;
     static CallResult ok(Payload resp) {
         CallResult r;
@@ -213,7 +213,7 @@ struct DiagnosticsEvent {
     std::chrono::milliseconds duration{0};
     Availability availability{Availability::Unknown};
     int retryAttempt{0};
-    std::string code;  // CGW-FW-03xx
+    std::string code;  // CCU-FW-03xx
 };
 
 class DiagnosticsSink {
@@ -250,7 +250,7 @@ struct SomeIpConfig {
     DiscoveryConfig discovery;
     std::string application;      // unique per-process application/client identity
     std::string registryProfile;  // Service Registry deployment entry reference
-    // Resource ceilings (CR-005 §11); overflow yields CGW-FW-0309.
+    // Resource ceilings (CR-005 §11); overflow yields CCU-FW-0309.
     std::size_t maxProviders{64};
     std::size_t maxClients{64};
     std::size_t maxSubscriptionsPerClient{256};
@@ -258,18 +258,18 @@ struct SomeIpConfig {
 };
 
 // ============================================================
-// SomeIpException (CGW-FW-0301~0310) (CR-005 §12)
+// SomeIpException (CCU-FW-0301~0310) (CR-005 §12)
 // ============================================================
-// code: CGW-FW-0301 Runtime/Application init/start failed
-//       CGW-FW-0302 config/Registry/ID/version/identity conflict (fail-closed)
-//       CGW-FW-0303 offer/request/discovery failed
-//       CGW-FW-0304 unavailable/version mismatch
-//       CGW-FW-0305 call timeout/cancel/transport failure
-//       CGW-FW-0306 message/payload/codec boundary illegal
-//       CGW-FW-0307 handler/response/business adapter exception
-//       CGW-FW-0308 event offer/notify/subscribe/recovery failed
-//       CGW-FW-0309 resource limit exhausted
-//       CGW-FW-0310 shutdown/executor/backend internal failure
+// code: CCU-FW-0301 Runtime/Application init/start failed
+//       CCU-FW-0302 config/Registry/ID/version/identity conflict (fail-closed)
+//       CCU-FW-0303 offer/request/discovery failed
+//       CCU-FW-0304 unavailable/version mismatch
+//       CCU-FW-0305 call timeout/cancel/transport failure
+//       CCU-FW-0306 message/payload/codec boundary illegal
+//       CCU-FW-0307 handler/response/business adapter exception
+//       CCU-FW-0308 event offer/notify/subscribe/recovery failed
+//       CCU-FW-0309 resource limit exhausted
+//       CCU-FW-0310 shutdown/executor/backend internal failure
 // Diagnostics/exceptions SHALL NOT carry full payload, tokens, certs or
 // seed/key material (CR-005 §9/§13).
 struct SomeIpException : std::runtime_error {
@@ -309,4 +309,4 @@ private:
     explicit Subscription(std::shared_ptr<detail::SubscriptionState> state);
 };
 
-}  // namespace cgw::fw::someip
+}  // namespace ccu::fw::someip

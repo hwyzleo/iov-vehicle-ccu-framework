@@ -8,8 +8,8 @@
 #include <thread>
 #include <vector>
 
-using namespace cgw::fw::store;
-using cgwtest::TempDir;
+using namespace ccu::fw::store;
+using ccutest::TempDir;
 namespace fs = std::filesystem;
 
 static Store openStore(const fs::path& root) {
@@ -99,7 +99,7 @@ void test_multithread_mixed_ops() {
             try { (void)s.load<int64_t>("shared"); }
             catch (const StoreException& e) {
                 // 0105 acceptable transient between save/remove
-                if (e.code != "CGW-FW-0105") ++errors;
+                if (e.code != "CCU-FW-0105") ++errors;
             }
         }
     });

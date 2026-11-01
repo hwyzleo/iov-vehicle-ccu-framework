@@ -1,9 +1,9 @@
 // src/sha256.cpp - FIPS 180-4 SHA-256 Core + Hex encoder + facade.
-// CGW-FW-DSN-CR-004.
+// CCU-FW-DSN-CR-004.
 //
 // Self-contained minimal implementation. No third-party runtime dependency.
 // License: project LICENSE. FIPS 180-4 mapping: §5 (message padding, message
-// schedule, compression). Local modifications: none beyond CGW namespace
+// schedule, compression). Local modifications: none beyond CCU namespace
 // adaptation of the public-domain algorithm.
 //
 // Implementation constraints (CR-004 §5):
@@ -15,11 +15,11 @@
 //     full buffer.
 //   - No global mutable state; per-call local context; reentrant/thread-safe.
 
-#include "cgw/fw/hash/sha256.hpp"
+#include "ccu/fw/hash/sha256.hpp"
 
 #include <cstring>
 
-namespace cgw::fw::hash {
+namespace ccu::fw::hash {
 namespace {
 
 // FIPS 180-4 §4.2.2 initial hash values H0..H7.
@@ -46,7 +46,7 @@ constexpr std::uint32_t kRoundK[64] = {
 };
 
 // Total bits must fit in std::uint64_t: input bytes * 8 must not overflow.
-// bytes <= UINT64_MAX / 8. Anything larger is rejected as CGW-FW-0401 before
+// bytes <= UINT64_MAX / 8. Anything larger is rejected as CCU-FW-0401 before
 // any computation (and before any input byte is read).
 constexpr std::uint64_t kMaxInputBytes = UINT64_MAX / 8u;
 
@@ -180,12 +180,12 @@ Sha256Digest sha256(ByteView input) {
     // CR-004 §7: validate before computation; never return a partial digest.
     if (input.size > 0 && input.data == nullptr) {
         throw HashException(
-            "CGW-FW-0401",
+            "CCU-FW-0401",
             "sha256: non-zero input length with null data pointer");
     }
     if (input.size > kMaxInputBytes) {
         throw HashException(
-            "CGW-FW-0401",
+            "CCU-FW-0401",
             "sha256: input bit length overflows 64-bit representation");
     }
 
@@ -196,9 +196,9 @@ Sha256Digest sha256(ByteView input) {
     } catch (const std::exception&) {
         // CR-004 §7: internal invariant / self-check / backend failure. The
         // self-contained Core performs only arithmetic + memcpy (no throw in
-        // practice); this maps any unexpected failure to CGW-FW-0402 and never
+        // practice); this maps any unexpected failure to CCU-FW-0402 and never
         // returns a partial digest.
-        throw HashException("CGW-FW-0402", "sha256: internal computation failure");
+        throw HashException("CCU-FW-0402", "sha256: internal computation failure");
     }
 }
 
@@ -212,4 +212,4 @@ std::string sha256_hex(ByteView input) {
     return out;
 }
 
-}  // namespace cgw::fw::hash
+}  // namespace ccu::fw::hash

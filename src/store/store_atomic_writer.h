@@ -8,7 +8,7 @@
 #include <string_view>
 #include <vector>
 
-namespace cgw {
+namespace ccu {
 namespace fw {
 namespace store {
 
@@ -19,7 +19,7 @@ namespace fs = std::filesystem;
 // (short-write/EINTR safe), fsync(temp), renames temp -> final, then fsyncs
 // the service directory. On pre-rename failure the temp is unlinked and the
 // old final file is preserved. On post-rename dir-fsync failure the new value
-// is in place but durability is unconfirmed (CGW-FW-0102, stage "dir-fsync").
+// is in place but durability is unconfirmed (CCU-FW-0102, stage "dir-fsync").
 class AtomicWriter {
 public:
     static void commit(const fs::path& finalPath, const fs::path& serviceDir,
@@ -27,11 +27,11 @@ public:
                        const std::vector<uint8_t>& bytes,
                        std::size_t maxValueBytes);
 
-    // fsync a directory by path (used by remove()). Throws CGW-FW-0102.
+    // fsync a directory by path (used by remove()). Throws CCU-FW-0102.
     static void syncDir(const fs::path& dir, std::string_view service,
                         std::string_view key, std::string_view stage);
 };
 
 } // namespace store
 } // namespace fw
-} // namespace cgw
+} // namespace ccu

@@ -2,7 +2,7 @@
 #include <sstream>
 #include <cstdio>
 
-namespace cgw {
+namespace ccu {
 namespace fw {
 namespace log {
 
@@ -63,4 +63,4 @@ std::string JsonLineFormatter::formatValue(const FieldValue& value) {
 
 } // namespace log
 } // namespace fw
-} // namespace cgw
+} // namespace ccu

@@ -6,7 +6,7 @@
 #include <mutex>
 #include <cstdint>
 
-namespace cgw {
+namespace ccu {
 namespace fw {
 namespace log {
 
@@ -39,4 +39,4 @@ private:
 
 } // namespace log
 } // namespace fw
-} // namespace cgw
+} // namespace ccu

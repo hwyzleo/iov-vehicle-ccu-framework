@@ -1,6 +1,6 @@
-// cgw-framework-hash - reversible binary-safe byte<->Hex codec.
-// CGW-FW-DSN-CR-007: lowercase Hex encoding, case-insensitive decoding, no
-// digest/signature/encryption. Shares the cgw-framework-hash target and
+// ccu-framework-hash - reversible binary-safe byte<->Hex codec.
+// CCU-FW-DSN-CR-007: lowercase Hex encoding, case-insensitive decoding, no
+// digest/signature/encryption. Shares the ccu-framework-hash target and
 // reuses ByteView from sha256.hpp; sha256()/sha256_hex() are unchanged.
 //
 // Boundary (CR-007 §2/§7):
@@ -20,17 +20,17 @@
 #include <string>
 #include <string_view>
 
-#include <cgw/fw/hash/sha256.hpp>  // ByteView
+#include <ccu/fw/hash/sha256.hpp>  // ByteView
 
-namespace cgw::fw::hash {
+namespace ccu::fw::hash {
 
-// Exception carrying CGW-FW-041x error codes (CR-007 §7).
-//   CGW-FW-0410: Hex input length is odd - rejected before allocation/decode.
-//   CGW-FW-0411: Hex input contains a non-[0-9a-fA-F] character - carries the
+// Exception carrying CCU-FW-041x error codes (CR-007 §7).
+//   CCU-FW-0410: Hex input length is odd - rejected before allocation/decode.
+//   CCU-FW-0411: Hex input contains a non-[0-9a-fA-F] character - carries the
 //                offending character index in position(); no partial result.
-//   CGW-FW-0412: non-zero-length null pointer or unrepresentable output
+//   CCU-FW-0412: non-zero-length null pointer or unrepresentable output
 //                length - rejected before encoding.
-// position() is npos except for CGW-FW-0411, where it is the invalid char
+// position() is npos except for CCU-FW-0411, where it is the invalid char
 // index. Failure diagnostics MUST NOT record the full input, raw bytes or any
 // decoded prefix (only module, input length, error code, stage and index).
 class HexException : public std::runtime_error {
@@ -50,7 +50,7 @@ private:
 // first. No 0x prefix, separator, whitespace or newline. Empty input returns
 // an empty string. ByteView{nullptr, 0} is a legal empty input; a non-zero
 // length with a null pointer or an output length that cannot be represented
-// throws HexException(CGW-FW-0412).
+// throws HexException(CCU-FW-0412).
 std::string bytesToHex(ByteView input);
 
 // std::string_view convenience overload: adapts the byte address and length to
@@ -60,11 +60,11 @@ std::string bytesToHex(std::string_view input);
 
 // Decode lowercase/uppercase/mixed-case Hex to raw bytes. Every two Hex chars
 // restore one byte; hexToBytes(bytesToHex(x)) == x. Empty input returns an
-// empty string. Odd length throws HexException(CGW-FW-0410); a non-Hex
-// character throws HexException(CGW-FW-0411) with the character index. The
+// empty string. Odd length throws HexException(CCU-FW-0410); a non-Hex
+// character throws HexException(CCU-FW-0411) with the character index. The
 // result is returned by value; on error no partial result is exposed.
 // Returns std::string so it can carry arbitrary bytes (including internal NUL)
 // for consumers such as FOTA protobuf binary.
 std::string hexToBytes(std::string_view hex);
 
-}  // namespace cgw::fw::hash
+}  // namespace ccu::fw::hash

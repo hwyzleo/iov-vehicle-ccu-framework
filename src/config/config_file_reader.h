@@ -5,12 +5,12 @@
 #include <string>
 #include <cstdint>
 
-namespace cgw {
+namespace ccu {
 namespace fw {
 namespace config {
 
 // Reads a single config file with a size cap.
-// Throws ConfigException(CGW-FW-0001) on open/seek/size/read failure.
+// Throws ConfigException(CCU-FW-0001) on open/seek/size/read failure.
 class FileReader {
 public:
     static constexpr uint64_t kMaxFileSize = 1u * 1024u * 1024u; // 1 MiB
@@ -20,4 +20,4 @@ public:
 
 } // namespace config
 } // namespace fw
-} // namespace cgw
+} // namespace ccu

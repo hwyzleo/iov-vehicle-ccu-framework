@@ -10,7 +10,7 @@
 #include <pthread.h>
 #endif
 
-namespace cgw {
+namespace ccu {
 namespace fw {
 namespace log {
 
@@ -100,4 +100,4 @@ bool Enricher::isTimeSynced() const {
 
 } // namespace log
 } // namespace fw
-} // namespace cgw
+} // namespace ccu

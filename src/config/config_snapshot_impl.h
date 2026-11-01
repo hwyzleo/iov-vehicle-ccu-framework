@@ -6,7 +6,7 @@
 #include <vector>
 #include <string>
 
-namespace cgw {
+namespace ccu {
 namespace fw {
 namespace config {
 namespace detail {
@@ -41,4 +41,4 @@ private:
 } // namespace detail
 } // namespace config
 } // namespace fw
-} // namespace cgw
+} // namespace ccu

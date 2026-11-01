@@ -9,12 +9,12 @@
 #include <string>
 #include <vector>
 
-using namespace cgw::fw::someip;
-using cgwtest::makeTestConfig;
-using cgwtest::makeTestRuntime;
-using cgwtest::InlineExecutor;
-using cgwtest::DeferredExecutor;
-using cgwtest::FakeSomeIpBackend;
+using namespace ccu::fw::someip;
+using ccutest::makeTestConfig;
+using ccutest::makeTestRuntime;
+using ccutest::InlineExecutor;
+using ccutest::DeferredExecutor;
+using ccutest::FakeSomeIpBackend;
 
 namespace {
 
@@ -47,7 +47,7 @@ void test_availability_transitions() {
     assert(c.availability() == Availability::Unavailable);
     p.offer();  // -> Available
     assert(c.availability() == Availability::Available);
-    CGW_PASS("test_availability_transitions");
+    CCU_PASS("test_availability_transitions");
 }
 
 void test_version_mismatch() {
@@ -63,8 +63,8 @@ void test_version_mismatch() {
     assert(c.availability() == Availability::VersionMismatch);
     // Call on a version-mismatched service -> 0304 (CR-005 §7/§12).
     auto r = c.call(0x0001, PayloadView{nullptr, 0});
-    assert(!r.success && r.code == "CGW-FW-0304");
-    CGW_PASS("test_version_mismatch");
+    assert(!r.success && r.code == "CCU-FW-0304");
+    CCU_PASS("test_version_mismatch");
 }
 
 void test_unavailable_call_returns_0304() {
@@ -73,11 +73,11 @@ void test_unavailable_call_returns_0304() {
     auto c = h.runtime.createClient({0x1110, 0x0001}, {1, 0});
     c.requestService();  // no provider -> Unavailable
     auto r = c.call(0x0001, PayloadView{nullptr, 0});
-    assert(!r.success && r.code == "CGW-FW-0304");
+    assert(!r.success && r.code == "CCU-FW-0304");
     // Async returns a failed future too.
     auto f = c.callAsync(0x0001, Payload{}, CallOptions{});
     assert(!f.get().success);
-    CGW_PASS("test_unavailable_call_returns_0304");
+    CCU_PASS("test_unavailable_call_returns_0304");
 }
 
 void test_sync_call_success() {
@@ -95,7 +95,7 @@ void test_sync_call_success() {
     auto r = c.call(0x0001, PayloadView{req.data(), req.size()});
     assert(r.success);
     assert(r.response == req);
-    CGW_PASS("test_sync_call_success");
+    CCU_PASS("test_sync_call_success");
 }
 
 void test_async_call_success() {
@@ -114,7 +114,7 @@ void test_async_call_success() {
     auto r = fut.get();
     assert(r.success);
     assert(r.response == req);
-    CGW_PASS("test_async_call_success");
+    CCU_PASS("test_async_call_success");
 }
 
 void test_async_timeout_virtual_clock() {
@@ -137,11 +137,11 @@ void test_async_timeout_virtual_clock() {
     // Advance the virtual clock past the timeout; the handler is still queued.
     h.backend->advanceClock(std::chrono::milliseconds(150));
     auto r = fut.get();
-    assert(!r.success && r.code == "CGW-FW-0305");
+    assert(!r.success && r.code == "CCU-FW-0305");
     // The late response (queued handler) is discarded; draining does not change
     // the completed result (CR-005 §7).
     exec->drain();
-    CGW_PASS("test_async_timeout_virtual_clock");
+    CCU_PASS("test_async_timeout_virtual_clock");
 }
 
 void test_sync_timeout_real_wait() {
@@ -161,9 +161,9 @@ void test_sync_timeout_real_wait() {
     CallOptions opts;
     opts.timeout = std::chrono::milliseconds(30);
     auto r = c.call(0x0001, PayloadView{nullptr, 0}, opts);
-    assert(!r.success && r.code == "CGW-FW-0305");
+    assert(!r.success && r.code == "CCU-FW-0305");
     exec->drain();  // discard the late response
-    CGW_PASS("test_sync_timeout_real_wait");
+    CCU_PASS("test_sync_timeout_real_wait");
 }
 
 void test_non_idempotent_no_retry() {
@@ -180,15 +180,15 @@ void test_non_idempotent_no_retry() {
     // failure (US-507). The third call succeeds once failures are exhausted.
     h.backend->injectTransportFailures(2);
     auto r = c.call(0x0001, PayloadView{nullptr, 0});
-    assert(!r.success && r.code == "CGW-FW-0305");
+    assert(!r.success && r.code == "CCU-FW-0305");
     // Remaining injected failures are still pending (only one was consumed).
     // A subsequent call with no injected failures succeeds.
     auto r2 = c.call(0x0001, PayloadView{nullptr, 0});
     // The 2 remaining failures apply here too (no retry), so it fails again.
-    assert(!r2.success && r2.code == "CGW-FW-0305");
+    assert(!r2.success && r2.code == "CCU-FW-0305");
     auto r3 = c.call(0x0001, PayloadView{nullptr, 0});
     assert(r3.success);  // failures exhausted
-    CGW_PASS("test_non_idempotent_no_retry");
+    CCU_PASS("test_non_idempotent_no_retry");
 }
 
 void test_idempotent_bounded_retry_success() {
@@ -210,7 +210,7 @@ void test_idempotent_bounded_retry_success() {
     auto r = c.call(0x0001, PayloadView{nullptr, 0}, opts);
     assert(r.success);
     assert(r.response.size() == 1 && r.response[0] == 0x01);
-    CGW_PASS("test_idempotent_bounded_retry_success");
+    CCU_PASS("test_idempotent_bounded_retry_success");
 }
 
 void test_idempotent_retry_exhausted() {
@@ -229,8 +229,8 @@ void test_idempotent_retry_exhausted() {
     opts.retry = RetryMode::Idempotent;
     opts.maxRetries = 2;  // 1 initial + 2 retries = 3 attempts
     auto r = c.call(0x0001, PayloadView{nullptr, 0}, opts);
-    assert(!r.success && r.code == "CGW-FW-0305");
-    CGW_PASS("test_idempotent_retry_exhausted");
+    assert(!r.success && r.code == "CCU-FW-0305");
+    CCU_PASS("test_idempotent_retry_exhausted");
 }
 
 void test_subscription_raii() {
@@ -256,7 +256,7 @@ void test_subscription_raii() {
     }
     // Destructor is idempotent after cancel.
     assert(h.backend->subscriptionCount() == 0);
-    CGW_PASS("test_subscription_raii");
+    CCU_PASS("test_subscription_raii");
 }
 
 void test_inflight_limit() {
@@ -277,13 +277,13 @@ void test_inflight_limit() {
     CallOptions opts;
     opts.timeout = std::chrono::milliseconds(1000);
     auto f1 = c.callAsync(0x0001, Payload{}, opts);
-    // A second concurrent call exceeds the limit (CGW-FW-0309).
-    CGW_EXPECT_THROW_CODE(c.callAsync(0x0001, Payload{}, opts), "CGW-FW-0309");
+    // A second concurrent call exceeds the limit (CCU-FW-0309).
+    CCU_EXPECT_THROW_CODE(c.callAsync(0x0001, Payload{}, opts), "CCU-FW-0309");
     // Drain completes the first call, freeing the slot.
     exec->drain();
     auto r1 = f1.get();
     assert(r1.success);
-    CGW_PASS("test_inflight_limit");
+    CCU_PASS("test_inflight_limit");
 }
 
 }  // namespace

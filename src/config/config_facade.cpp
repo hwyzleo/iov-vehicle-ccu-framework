@@ -9,7 +9,7 @@
 #include <utility>
 #include <vector>
 
-namespace cgw {
+namespace ccu {
 namespace fw {
 namespace config {
 
@@ -18,9 +18,9 @@ Config::load(std::string_view service, const LoadOptions& options) {
     // 1. Validate service name.
     if (!PathResolver::isValidServiceName(service)) {
         throw ConfigException(
-            "CGW-FW-0004",
+            "CCU-FW-0004",
             ConfigErrorFormatter::format(
-                "CGW-FW-0004", "invalid service name", "", "", "service"),
+                "CCU-FW-0004", "invalid service name", "", "", "service"),
             "", "service");
     }
 
@@ -61,4 +61,4 @@ void Config::registerValidator(std::string_view service,
 
 } // namespace config
 } // namespace fw
-} // namespace cgw
+} // namespace ccu
